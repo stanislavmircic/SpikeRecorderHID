@@ -21,13 +21,30 @@
 
 
 //================ Parameters ===================
-#define FIRMWARE_VERSION "0.01"  // firmware version. Try to keep it to 4 characters
+#define FIRMWARE_VERSION "0.02"  // firmware version. Try to keep it to 4 characters
 #define HARDWARE_TYPE "NEURONSB" // hardware type/product. Try not to go over 8 characters
-#define HARDWARE_VERSION "0.01"  // hardware version. Try to keep it to 4 characters
+#define HARDWARE_VERSION "0.5"  // hardware version. Try to keep it to 4 characters
 #define COMMAND_RESPONSE_LENGTH 35  //16 is just the delimiters etc.
 #define DEBOUNCE_TIME 2000
 #define MAX_SAMPLE_RATE "10000" //this will be sent to Host when host asks for maximal ratings
 #define MAX_NUMBER_OF_CHANNELS "2" //this will be sent to Host when host asks for maximal ratings
+
+//operation modes
+#define OPERATION_MODE_DEFAULT 0
+#define OPERATION_MODE_BNC 1
+#define OPERATION_MODE_REACTION_TIMER 2
+#define OPERATION_MODE_DEV_BOARD 3
+
+#define GREEN_LED BIT0
+#define RED_LED BIT1
+#define RELAY_OUTPUT BIT7
+
+#define IO1 BIT2
+#define IO2 BIT3
+#define IO3 BIT4
+#define IO4 BIT5
+#define IO5 BIT6
+
 //===============================================
 
 // Global flags set by events
@@ -65,11 +82,29 @@ unsigned int debounceTimer2 = 0;
 unsigned int eventEnabled1 = 1;
 unsigned int eventEnabled2 = 1;
 
+//changes when we detect board
+unsigned int operationMode = 0;
 
-void setupADC();
+//used to detect changing in voltage on board detection
+int lastEncoderVoltage = 0;
+//used to detect changing in voltage on board detection
+int currentEncoderVoltage = 0;
+//measure time after voltage changes on board detection input
+unsigned int debounceEncoderTimer = 0;
+//flag that is active when board detection voltage stabilize
+unsigned int encoderEnabled = 0;
+
+unsigned int sampleData = 0;
+
+
+#define BOARD_DETECTION_TIMER_MAX_VALUE 15000 //1.5 sec
+
+
+void defaultSetupADC();
 void setupPeriodicTimer();
 void sendStringWithEscapeSequence(char * stringToSend);
 void executeCommand(char * command);
+void setupOperationMode(void);
 
 void main (void)
 {
@@ -90,18 +125,22 @@ void main (void)
     PMM_setVCore(PMM_BASE, PMM_CORE_LEVEL_2);
 #endif
     
-       initPorts();           // Config GPIOS for low-power (output low)
+       initPorts();            // Config GPIOS for low-power (output low)
        initClocks(16000000);   // Config clocks. MCLK=SMCLK=FLL=8MHz; ACLK=REFO=32kHz
-       USB_setup(TRUE, TRUE); // Init USB & events; if a host is present, connect
-       setupADC();            //setup ADC
-       setupPeriodicTimer();  //setup periodic timer for sampling
+       USB_setup(TRUE, TRUE);  // Init USB & events; if a host is present, connect
+       operationMode = OPERATION_MODE_DEFAULT;
+       setupOperationMode();   //setup GPIO
+       defaultSetupADC();
+       setupPeriodicTimer();   //setup periodic timer for sampling
 
        counterd = 0;
 
+       //setup buffers variables for ADC sampling
        weUseBufferX = 1;
        writingHeadY = 0;
        writingHeadX = 0;
 
+       //prepare state for USB
        bHIDDataSent_event = TRUE;
 
        // Pre-fill the buffers with visible ASCII characters (0x21 to 0x7E)
@@ -112,9 +151,12 @@ void main (void)
            bufferY[w] = y;
        }
 
-       //Logical inputs sensing
-       P4DIR = BIT1 + BIT2;
+       //LED diode (BIT0, BIT1) and relay (BIT7)
+       P4SEL = 0;//digital I/O
+       P4DIR = GREEN_LED + RED_LED + RELAY_OUTPUT;
        P4OUT = 0;
+
+
 
 
        __enable_interrupt();  // Enable interrupts globally
@@ -203,8 +245,10 @@ void main (void)
                   // __bis_SR_register(LPM3_bits + GIE);
                   // _NOP();
 
-            	   TA0CCTL0 &= ~CCIE;//stop timer -> this will stop sampling -> this will stop stream
+            	  // TA0CCTL0 &= ~CCIE;//stop timer -> this will stop sampling -> this will stop stream
             	   //prepare buffer for next connection
+            	   sampleData = 0;
+            	   P4OUT &= ~(RED_LED);
             	   weUseBufferX = 1;
 				   writingHeadY = 0;
 				   writingHeadX = 0;
@@ -223,6 +267,57 @@ void main (void)
        }  //while(1)
    } //main()
 
+
+//
+// Setup operation mode inputs outputs and state
+//
+void setupOperationMode(void)
+{
+	__disable_interrupt();
+	switch(operationMode)
+	{
+		case OPERATION_MODE_BNC:
+			P6SEL = BIT0+BIT1+BIT7;//select all pins as digital I/O
+			P6DIR = 0;//select all as inputs
+			P6OUT = 0;//put output register to zero
+			P4OUT |= RELAY_OUTPUT + GREEN_LED;
+			//default setup of ADC, redefines part of Port 6 pins
+			//defaultSetupADC();
+		break;
+		case OPERATION_MODE_REACTION_TIMER:
+			P6SEL = BIT0+BIT1+BIT7;//select all pins as digital I/O
+			P6DIR = 0;//select all as inputs
+			P6OUT = 0;//put output register to zero
+
+			P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);
+			//default setup of ADC, redefines part of Port 6 pins
+			//defaultSetupADC();
+		break;
+		case OPERATION_MODE_DEFAULT:
+					P6SEL = BIT0+BIT1+BIT7;//select all pins as digital I/O
+					P6DIR = 0;//select all as inputs
+					P6OUT = 0;//put output register to zero
+
+					P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);
+					//default setup of ADC, redefines part of Port 6 pins
+					//defaultSetupADC();
+				break;
+		default:
+
+			P6SEL = BIT0+BIT1+BIT7;//select all pins as digital I/O
+			P6DIR = 0;//select all as inputs
+			P6OUT = 0;//put output register to zero
+
+			P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);
+			//default setup of ADC, redefines part of Port 6 pins
+			//defaultSetupADC();
+
+		break;
+	}
+	__enable_interrupt();
+}
+
+
 //
 // Respond to a command. Send response if necessary
 //
@@ -234,7 +329,9 @@ void executeCommand(char * command)
 	}
    char * parameter = strtok(command, parameterDeimiter);
    if (!(strcmp(parameter, "h"))){//stop
-	   TA0CCTL0 &= ~CCIE;
+	 //  TA0CCTL0 &= ~CCIE;
+	   sampleData = 0;
+	   P4OUT &= ~(RED_LED);
 	   return;
    }
    if (!(strcmp(parameter, "?"))){//get parameters of MSP
@@ -276,7 +373,9 @@ void executeCommand(char * command)
    	   return;
       }
    if (!(strcmp(parameter, "start"))){//start sampling
-	   TA0CCTL0 = CCIE;
+	   //TA0CCTL0 = CCIE;
+	   sampleData = 1;
+	   P4OUT |= RED_LED;
 	   return;
    }
    if (!(strcmp(parameter, "s"))){//sample rate
@@ -429,7 +528,7 @@ void setupPeriodicTimer()
 {
 	TA0CCR0 = 799;//32768=1sec;
 	TA0CTL = TASSEL_2+MC_1+TACLR; // ACLK, count to CCR0 then roll, clear TAR
-	//TA0CCTL0 = CCIE;
+	TA0CCTL0 = CCIE;
 }
 
 
@@ -449,25 +548,11 @@ void __attribute__ ((interrupt(TIMER0_A0_VECTOR))) TIMER0_A0_ISR (void)
 
 //--------------------- ADC -----------------------------------------------
 
-void setupADC()
+void defaultSetupADC()
 {
-
-	/*  P6SEL = 0x0F;                             // Enable A/D channel inputs
-	  ADC12CTL0 = ADC12ON+ADC12MSC+BITA;//+BIT8;//+BIT9;//ADC12SHT0_8; // Turn on ADC12, extend sampling time
-	                                            // to avoid overflow of results
-	  ADC12CTL1 = ADC12SHP+ADC12CONSEQ_3+ADC12DIV_5+ADC12SSEL_0;       // Use sampling timer, repeated sequence
-
-	  ADC12CTL2 = ADC12RES_1;
-	  ADC12MCTL0 = ADC12INCH_0+ADC12EOS;                 // ref+=AVcc, channel = A0
-	 // ADC12MCTL1 = ADC12INCH_1+ADC12EOS;                 // ref+=AVcc, channel = A1
-	 // ADC12MCTL2 = ADC12INCH_2;                 // ref+=AVcc, channel = A2
-	 // ADC12MCTL3 = ADC12INCH_3;        // ref+=AVcc, channel = A3, end seq.
-	  ADC12IE = 0x01;                           // Enable ADC12IFG.3
-	  ADC12CTL0 |= ADC12ENC;                    // Enable conversions
-	  ADC12CTL0 |= ADC12SC;                     // Start convn - software trigger
-*/
-
-   P6SEL |= BIT0+BIT1+BIT2; // config first 3 channels to be used with ADC
+   //select recording inputs and board detection input(A7)
+   //as analog inputs
+   P6SEL |= BIT0+BIT1+BIT7;
 
    // ADC configuration
    //ADC12SHT02 Sampling time 16 cycles,
@@ -481,16 +566,12 @@ void setupADC()
 
    ADC12CTL2 = ADC12RES_1;//resolution to 10 bits
    // Use A0 as input to register 0
-   ADC12MCTL0 = ADC12INCH_0;
-   ADC12MCTL1 = ADC12INCH_1+ADC12EOS;
-   ADC12IE = 0x02;
-   // Use A0 as input to register 1
- //  ADC12MCTL1 = ADC12INCH_1;
-   // Use A0 as input to register 2
-   //ADC12EOS is set to 1 and it marks last conversation in sequence
- //  ADC12MCTL2 = ADC12INCH_2 + ADC12EOS;
+   ADC12MCTL0 = ADC12INCH_0;//recording channel
+   ADC12MCTL1 = ADC12INCH_1;//recording channel
+   ADC12MCTL2 = ADC12INCH_7+ADC12EOS;//board detection input
+   //ADC12IE = 0x02;//enable interrupt on ADC12IFG2 bit
 
-   ADC12IE = BIT0;//trigger interupt after conversation of A2
+   ADC12IE = BIT0;//trigger interrupt after conversation of A2
    ADC12CTL0 &= ~ADC12SC;
  //  ADC12CTL0 |= ADC12ENC; // Enable conversion
 
@@ -507,141 +588,228 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 #endif
 {
 
-	//============== event 1 =================
 
-	if(debounceTimer1>0)
+	// ------------------- BOARD DETECTION -----------------------------
+
+	currentEncoderVoltage = ADC12MEM2;
+
+	if(debounceEncoderTimer>0)
 	{
-		debounceTimer1 = debounceTimer1 -1;
+		debounceEncoderTimer = debounceEncoderTimer -1;
 	}
 	else
 	{
-		if(eventEnabled1>0)
+		//if board detection voltage is changing
+		if((currentEncoderVoltage - lastEncoderVoltage)>100 || (lastEncoderVoltage - currentEncoderVoltage)>100)
 		{
-				if(P4IN & BIT3)
-				{
-						eventEnabled1 = 0;
-						debounceTimer1 = DEBOUNCE_TIME;
-						sendStringWithEscapeSequence("EVNT:1;");
-				}
-		}
-		else
-		{
-			if(!(P4IN & BIT3))
-			{
-				eventEnabled1 = 1;
-			}
+			debounceEncoderTimer = BOARD_DETECTION_TIMER_MAX_VALUE;
 		}
 	}
 
-	//================= EVENT 2 code ======================
-
-	if(debounceTimer2>0)
+	if(debounceEncoderTimer==0)
+	{
+		if(currentEncoderVoltage < 93 )
 		{
-			debounceTimer2 = debounceTimer2 -1;
-		}
-		else
-		{
-			if(eventEnabled2>0)
+			//default
+			if(operationMode != OPERATION_MODE_DEFAULT)
 			{
-					if(P4IN & BIT4)
+				operationMode = OPERATION_MODE_DEFAULT;
+				setupOperationMode();
+
+			}
+
+		}
+		else if((currentEncoderVoltage >= 93) && (currentEncoderVoltage < 232))
+		{
+			//first board BNC
+			if(operationMode != OPERATION_MODE_BNC)
+			{
+				operationMode = OPERATION_MODE_BNC;
+				setupOperationMode();
+
+			}
+
+		}
+		else if((currentEncoderVoltage >= 232) && (currentEncoderVoltage < 384))
+		{
+			//second board - Reaction timer
+
+			if(operationMode != OPERATION_MODE_REACTION_TIMER)
+			{
+				operationMode = OPERATION_MODE_REACTION_TIMER;
+				setupOperationMode();
+
+			}
+		}
+		else if((currentEncoderVoltage >= 384) && (currentEncoderVoltage < 543))
+		{
+			//third board
+
+		}
+		else if((currentEncoderVoltage >= 543) && (currentEncoderVoltage < 698))
+		{
+			//forth board
+
+		}
+		else if((currentEncoderVoltage >= 698) && (currentEncoderVoltage < 853))
+		{
+			//fifth board
+
+		}
+		else if((currentEncoderVoltage >= 853))
+		{
+			//sixth board
+
+		}
+	}
+
+	lastEncoderVoltage = currentEncoderVoltage;
+
+
+	//--------------------- BOARD EXECUTION -------------------------------
+
+
+	switch(operationMode)
+		{
+
+			case OPERATION_MODE_REACTION_TIMER:
+
+			break;
+			case OPERATION_MODE_BNC:
+			default:
+				//============== event 1 =================
+
+					if(debounceTimer1>0)
 					{
-							eventEnabled2 = 0;
-							debounceTimer2 = DEBOUNCE_TIME;
-							sendStringWithEscapeSequence("EVNT:2;");
+						debounceTimer1 = debounceTimer1 -1;
 					}
-			}
-			else
-			{
-				if(!(P4IN & BIT4))
-				{
-					eventEnabled2 = 1;
-				}
+					else
+					{
+						if(eventEnabled1>0)
+						{
+								if(P6IN & IO1)
+								{
+										eventEnabled1 = 0;
+										debounceTimer1 = DEBOUNCE_TIME;
+										sendStringWithEscapeSequence("EVNT:1;");
+								}
+						}
+						else
+						{
+							if(!(P6IN & IO1))
+							{
+								eventEnabled1 = 1;
+							}
+						}
+					}
 
-			}
+					//================= EVENT 2 code ======================
+
+					if(debounceTimer2>0)
+						{
+							debounceTimer2 = debounceTimer2 -1;
+						}
+						else
+						{
+							if(eventEnabled2>0)
+							{
+									if(P6IN & IO2)
+									{
+											eventEnabled2 = 0;
+											debounceTimer2 = DEBOUNCE_TIME;
+											sendStringWithEscapeSequence("EVNT:2;");
+									}
+							}
+							else
+							{
+								if(!(P6IN & IO2))
+								{
+									eventEnabled2 = 1;
+								}
+
+							}
+						}
+
 		}
-
 
 	//========== ADC code ======================
 
-
-
-	P4OUT ^= BIT2;
+if(sampleData == 1)
+{
 	if(weUseBufferX==1)
 	{
-		//P4OUT ^= BIT2;
 		tempIndex = writingHeadX;//remember position of begining of frame to put flag bit
 		tempADCresult = ADC12MEM0;
-		/*tempADCresult = counterd;
-		counterd = counterd+25;
-		if(counterd>1000)
-		{
-			counterd = 0;
 
-		}*/
-		bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
-		bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
-		if(writingHeadX>=MEGA_DATA_LENGTH)
-		{
-			writingHeadY = 0;
-			weUseBufferX = 0;
-			weHaveDataToSend = 1;
-		}
 
-		if(numberOfChannels>1)
-		{
-			tempADCresult = ADC12MEM1;
-			bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
-			bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
-			if(writingHeadX>=MEGA_DATA_LENGTH)
-			{
-				writingHeadY = 0;
-				weUseBufferX = 0;
-				weHaveDataToSend = 1;
-			}
+				bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
+				bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
+				if(writingHeadX>=MEGA_DATA_LENGTH)
+				{
+					writingHeadY = 0;
+					weUseBufferX = 0;
+					weHaveDataToSend = 1;
+				}
 
-		}
+				if(numberOfChannels>1)
+				{
+					tempADCresult = ADC12MEM1;
+					bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
+					bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
+					if(writingHeadX>=MEGA_DATA_LENGTH)
+					{
+						writingHeadY = 0;
+						weUseBufferX = 0;
+						weHaveDataToSend = 1;
+					}
 
-		bufferX[tempIndex] |= BIT7;//put flag for begining of frame
+				}
+
+				bufferX[tempIndex] |= BIT7;//put flag for begining of frame
+
 	}
 	else
 	{
-		//P4OUT ^= BIT2;
+
 		tempIndex = writingHeadY;//remember position of begining of frame to put flag bit
 
 		tempADCresult = ADC12MEM0;
-		/*tempADCresult = counterd;
-		counterd = counterd+25;
-		if(counterd>1000)
-		{
-			counterd = 0;
-		}*/
-		bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
-		bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
-		if(writingHeadY>=MEGA_DATA_LENGTH)
-		{
-			writingHeadX = 0;
-			weUseBufferX = 1;
-			weHaveDataToSend = 1;
 
-		}
 
-		if(numberOfChannels>1)
-		{
-			tempADCresult = ADC12MEM1;
-			bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
-			bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
-			if(writingHeadY>=MEGA_DATA_LENGTH)
-			{
-				writingHeadX = 0;
-				weUseBufferX = 1;
-				weHaveDataToSend = 1;
+				bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
+				bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
+				if(writingHeadY>=MEGA_DATA_LENGTH)
+				{
+					writingHeadX = 0;
+					weUseBufferX = 1;
+					weHaveDataToSend = 1;
 
-			}
+				}
 
-		}
+				if(numberOfChannels>1)
+				{
+					tempADCresult = ADC12MEM1;
+					bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
+					bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
+					if(writingHeadY>=MEGA_DATA_LENGTH)
+					{
+						writingHeadX = 0;
+						weUseBufferX = 1;
+						weHaveDataToSend = 1;
 
-		bufferY[tempIndex] |= BIT7;
+					}
+
+				}
+
+				bufferY[tempIndex] |= BIT7;
+
 	}
+}
+else
+{
+	tempADCresult = ADC12MEM0;
+	tempADCresult = ADC12MEM1;
+}
 //Uncomment this when not using repeat of sequence
 	ADC12CTL0 &= ~ADC12SC;
 }

@@ -77,10 +77,27 @@ unsigned int counterd = 0;
 unsigned int weHaveDataToSend = 0;
 unsigned int numberOfChannels = 2;
 
+//used for events in normal mode and reaction timer
 unsigned int debounceTimer1 = 0;
 unsigned int debounceTimer2 = 0;
 unsigned int eventEnabled1 = 1;
 unsigned int eventEnabled2 = 1;
+
+
+//reaction timer mode
+unsigned int reactionTimerMode = 0;
+unsigned int mainStimulusRTCounter = 0;
+unsigned int durationStimulusRTCounter = 0;
+#define STIMULUS_DELAY 40000
+#define STIMULUS_DURATION 2200
+#define RT_FREQUENCY_FIRST 10
+#define RT_FREQUENCY_SECOND 20
+unsigned int RTSpeakerFrequency = 10;
+unsigned int RTFrequencyGeneratorCounter = 0;
+unsigned int stimulusChoosen =0;
+
+
+
 
 //changes when we detect board
 unsigned int operationMode = 0;
@@ -277,7 +294,7 @@ void setupOperationMode(void)
 	switch(operationMode)
 	{
 		case OPERATION_MODE_BNC:
-			P6SEL = BIT0+BIT1+BIT7;//select all pins as digital I/O
+			P6SEL = BIT0+BIT1+BIT7;//analog inputs
 			P6DIR = 0;//select all as inputs
 			P6OUT = 0;//put output register to zero
 			P4OUT |= RELAY_OUTPUT + GREEN_LED;
@@ -285,11 +302,14 @@ void setupOperationMode(void)
 			//defaultSetupADC();
 		break;
 		case OPERATION_MODE_REACTION_TIMER:
-			P6SEL = BIT0+BIT1+BIT7;//select all pins as digital I/O
-			P6DIR = 0;//select all as inputs
+			P6SEL = BIT0+BIT1+BIT7;//select analog inputs
+			//select two swithes to inputs (BIT6 and BIT5)
+			//rest is output (BIT2 - speaker, BIT3 & BIT4 are LEDs)
+			P6DIR = IO1+IO2+IO3;
 			P6OUT = 0;//put output register to zero
 
 			P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);
+			P4OUT |=  GREEN_LED;
 			//default setup of ADC, redefines part of Port 6 pins
 			//defaultSetupADC();
 		break;
@@ -673,6 +693,130 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 		{
 
 			case OPERATION_MODE_REACTION_TIMER:
+				//============== button 1 - mode selection RT =================
+
+				if(debounceTimer1>0)
+				{
+					debounceTimer1 = debounceTimer1 -1;
+				}
+				else
+				{
+					if(eventEnabled1>0)
+					{
+							if(P6IN & IO5)
+							{
+									eventEnabled1 = 0;
+									debounceTimer1 = DEBOUNCE_TIME;
+									reactionTimerMode = 0;
+									mainStimulusRTCounter = STIMULUS_DELAY - 150;
+									P6OUT &= ~(IO3 + IO2 + IO1);//reset here because of speaker
+
+									//sendStringWithEscapeSequence("EVNT:1;");
+							}
+					}
+					else
+					{
+						if(!(P6IN & IO5))
+						{
+							eventEnabled1 = 1;
+						}
+					}
+				}
+
+				//================= button 2 RT mode selection ======================
+
+				if(debounceTimer2>0)
+					{
+						debounceTimer2 = debounceTimer2 -1;
+					}
+					else
+					{
+						if(eventEnabled2>0)
+						{
+								if(P6IN & IO4)
+								{
+										eventEnabled2 = 0;
+										debounceTimer2 = DEBOUNCE_TIME;
+										reactionTimerMode = 1;
+										mainStimulusRTCounter = STIMULUS_DELAY - 150;
+										P6OUT &= ~(IO3 + IO2 + IO1);//reset here because of speaker
+										//sendStringWithEscapeSequence("EVNT:2;");
+								}
+						}
+						else
+						{
+							if(!(P6IN & IO4))
+							{
+								eventEnabled2 = 1;
+							}
+
+						}
+					}
+
+			//----------- Reaction Timer functionality based on mode------------------------
+				mainStimulusRTCounter++;
+
+				if(STIMULUS_DELAY == mainStimulusRTCounter)
+				{
+					mainStimulusRTCounter = 0;
+					stimulusChoosen = currentEncoderVoltage & BIT0;
+					if(reactionTimerMode)
+					{
+						//sound mode
+						if(stimulusChoosen)
+						{
+							RTSpeakerFrequency = RT_FREQUENCY_FIRST;
+							sendStringWithEscapeSequence("EVNT:1;");
+						}
+						else
+						{
+							RTSpeakerFrequency = RT_FREQUENCY_SECOND;
+							sendStringWithEscapeSequence("EVNT:2;");
+						}
+						RTFrequencyGeneratorCounter = 0;
+						P6OUT ^= IO1;
+					}
+					else
+					{
+						//LED mode
+						if(stimulusChoosen)
+						{
+							P6OUT |= IO2;
+							sendStringWithEscapeSequence("EVNT:1;");
+						}
+						else
+						{
+							P6OUT |= IO3;
+							sendStringWithEscapeSequence("EVNT:2;");
+						}
+
+					}
+
+					//set stimulus duration count down timer
+					durationStimulusRTCounter = STIMULUS_DURATION;
+				}
+
+
+				if(durationStimulusRTCounter==0)
+				{
+					//set LEDs and Speeker on zerro when stimulus duration runs out
+					P6OUT &= ~(IO3 + IO2 + IO1);
+				}
+				else
+				{
+					//count down stimulus duration - decrement
+					durationStimulusRTCounter--;
+					if(reactionTimerMode)
+					{
+						RTFrequencyGeneratorCounter++;
+						if(RTFrequencyGeneratorCounter == RTSpeakerFrequency)
+						{
+							RTFrequencyGeneratorCounter = 0;
+							P6OUT ^= IO1;
+						}
+					}
+				}
+
 
 			break;
 			case OPERATION_MODE_BNC:

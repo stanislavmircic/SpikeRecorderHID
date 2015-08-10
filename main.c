@@ -85,6 +85,7 @@ unsigned int eventEnabled2 = 1;
 
 
 //reaction timer mode
+unsigned int stimulationEnabled = 0;
 unsigned int reactionTimerMode = 0;
 unsigned int mainStimulusRTCounter = 0;
 unsigned int durationStimulusRTCounter = 0;
@@ -710,7 +711,7 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 									reactionTimerMode = 0;
 									mainStimulusRTCounter = STIMULUS_DELAY - 150;
 									P6OUT &= ~(IO3 + IO2 + IO1);//reset here because of speaker
-
+									stimulationEnabled = 1;
 									//sendStringWithEscapeSequence("EVNT:1;");
 							}
 					}
@@ -741,6 +742,7 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 										mainStimulusRTCounter = STIMULUS_DELAY - 150;
 										P6OUT &= ~(IO3 + IO2 + IO1);//reset here because of speaker
 										//sendStringWithEscapeSequence("EVNT:2;");
+										stimulationEnabled = 1;
 								}
 						}
 						else
@@ -754,11 +756,15 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 					}
 
 			//----------- Reaction Timer functionality based on mode------------------------
-				mainStimulusRTCounter++;
+				if(stimulationEnabled)
+				{
+					mainStimulusRTCounter++;
+				}
 
 				if(STIMULUS_DELAY == mainStimulusRTCounter)
 				{
 					mainStimulusRTCounter = 0;
+					stimulationEnabled = 0;
 					stimulusChoosen = currentEncoderVoltage & BIT0;
 					if(reactionTimerMode)
 					{

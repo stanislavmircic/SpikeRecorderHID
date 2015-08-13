@@ -86,6 +86,7 @@ unsigned int eventEnabled2 = 1;
 
 //reaction timer mode
 unsigned int stimulationEnabled = 0;
+unsigned int oneShotStimmulation = 1;
 unsigned int reactionTimerMode = 0;
 unsigned int mainStimulusRTCounter = 0;
 unsigned int durationStimulusRTCounter = 0;
@@ -355,7 +356,7 @@ void executeCommand(char * command)
 	   P4OUT &= ~(RED_LED);
 	   return;
    }
-   if (!(strcmp(parameter, "?"))){//get parameters of MSP
+   else if (!(strcmp(parameter, "?"))){//get parameters of MSP
 
 
 	   char responseString[COMMAND_RESPONSE_LENGTH] = "";
@@ -376,7 +377,7 @@ void executeCommand(char * command)
 
 	   return;
    }
-   if (!(strcmp(parameter, "max"))){//get parameters of MSP
+   else if (!(strcmp(parameter, "max"))){//get parameters of MSP
 
 
    	   char responseString[COMMAND_RESPONSE_LENGTH] = "";
@@ -393,21 +394,60 @@ void executeCommand(char * command)
 
    	   return;
       }
-   if (!(strcmp(parameter, "start"))){//start sampling
+   else if (!(strcmp(parameter, "start"))){//start sampling
 	   //TA0CCTL0 = CCIE;
 	   sampleData = 1;
 	   P4OUT |= RED_LED;
 	   return;
    }
-   if (!(strcmp(parameter, "s"))){//sample rate
+   else if (!(strcmp(parameter, "board"))){//get board type
+   	   //TA0CCTL0 = CCIE;
+	   switch(operationMode)
+	   	{
+	   		case OPERATION_MODE_BNC:
+	   			sendStringWithEscapeSequence("BRD:1;");
+	   		break;
+	   		case OPERATION_MODE_REACTION_TIMER:
+	   			sendStringWithEscapeSequence("BRD:2;");
+	   		break;
+	   	}
+   	   return;
+      }
+   else if (!(strcmp(parameter, "rtrepeat"))){//get info if RT is repeating
+      	   //TA0CCTL0 = CCIE;
+   	   if(oneShotStimmulation)
+   	   	{
+   	   		sendStringWithEscapeSequence("RTR:0;");
+   	   	}
+		else
+		{
+   	   		sendStringWithEscapeSequence("RTR:1;");
+   	   	}
+      	return;
+    }
+   else if (!(strcmp(parameter, "srtrepeat"))){//swap RT repeat mode repeat/non-repeat
+         	   //TA0CCTL0 = CCIE;
+	   	if(oneShotStimmulation)
+      	   	{
+	   		oneShotStimmulation =0;
+	   		stimulationEnabled = 1;
+      	   	}
+   		else
+   		{
+   			oneShotStimmulation = 1;
+   			stimulationEnabled = 0;
+      	}
+         	return;
+   }
+   else if (!(strcmp(parameter, "s"))){//sample rate
 
 	   return;
    }
-   if (!(strcmp(parameter, "conf s"))){//sample rate
+   else if (!(strcmp(parameter, "conf s"))){//sample rate
 
 	   return;
    }
-   if (!(strcmp(parameter, "c"))){//number of channels
+   else if (!(strcmp(parameter, "c"))){//number of channels
 
 	   return;
    }
@@ -635,6 +675,7 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 			if(operationMode != OPERATION_MODE_DEFAULT)
 			{
 				operationMode = OPERATION_MODE_DEFAULT;
+				sendStringWithEscapeSequence("BRD:0;");
 				setupOperationMode();
 
 			}
@@ -646,6 +687,7 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 			if(operationMode != OPERATION_MODE_BNC)
 			{
 				operationMode = OPERATION_MODE_BNC;
+				sendStringWithEscapeSequence("BRD:1;");
 				setupOperationMode();
 
 			}
@@ -658,6 +700,7 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 			if(operationMode != OPERATION_MODE_REACTION_TIMER)
 			{
 				operationMode = OPERATION_MODE_REACTION_TIMER;
+				sendStringWithEscapeSequence("BRD:2;");
 				setupOperationMode();
 
 			}
@@ -764,7 +807,10 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 				if(STIMULUS_DELAY == mainStimulusRTCounter)
 				{
 					mainStimulusRTCounter = 0;
-					stimulationEnabled = 0;
+					if(oneShotStimmulation)
+					{
+						stimulationEnabled = 0;
+					}
 					stimulusChoosen = currentEncoderVoltage & BIT0;
 					if(reactionTimerMode)
 					{

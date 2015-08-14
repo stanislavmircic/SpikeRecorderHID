@@ -315,6 +315,14 @@ void setupOperationMode(void)
 			//default setup of ADC, redefines part of Port 6 pins
 			//defaultSetupADC();
 		break;
+		case OPERATION_MODE_DEV_BOARD:
+			P6SEL = BIT0+BIT1+BIT7;//select analog inputs
+			P6DIR = 0;
+			P6OUT = 0;//put output register to zero
+
+			P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);
+			P4OUT |=  GREEN_LED;
+		break;
 		case OPERATION_MODE_DEFAULT:
 					P6SEL = BIT0+BIT1+BIT7;//select all pins as digital I/O
 					P6DIR = 0;//select all as inputs
@@ -410,6 +418,12 @@ void executeCommand(char * command)
 	   		case OPERATION_MODE_REACTION_TIMER:
 	   			sendStringWithEscapeSequence("BRD:2;");
 	   		break;
+	   		case OPERATION_MODE_DEV_BOARD:
+				sendStringWithEscapeSequence("BRD:3;");
+			break;
+	   		case OPERATION_MODE_DEFAULT:
+				sendStringWithEscapeSequence("BRD:0;");
+			break;
 	   	}
    	   return;
       }
@@ -707,7 +721,15 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 		}
 		else if((currentEncoderVoltage >= 384) && (currentEncoderVoltage < 543))
 		{
-			//third board
+			//third board - dev board
+
+			if(operationMode != OPERATION_MODE_DEV_BOARD)
+			{
+				operationMode = OPERATION_MODE_DEV_BOARD;
+				sendStringWithEscapeSequence("BRD:3;");
+				setupOperationMode();
+
+			}
 
 		}
 		else if((currentEncoderVoltage >= 543) && (currentEncoderVoltage < 698))
@@ -872,6 +894,7 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 
 			break;
 			case OPERATION_MODE_BNC:
+			case OPERATION_MODE_DEV_BOARD:
 			default:
 				//============== event 1 =================
 

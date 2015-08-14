@@ -1,7 +1,7 @@
 ******************************************************************************
                   MSP430 Linker Unix v4.4.3                    
 ******************************************************************************
->> Linked Fri Aug 14 16:24:57 2015
+>> Linked Fri Aug 14 17:53:18 2015
 
 OUTPUT FILE NAME:   <SpikeRecorderHID.out>
 ENTRY POINT SYMBOL: "_c_int00_noargs_noexit"  address: 0000a584

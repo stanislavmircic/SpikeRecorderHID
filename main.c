@@ -683,7 +683,7 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 
 	if(debounceEncoderTimer==0)
 	{
-		if(currentEncoderVoltage < 93 )
+		if(currentEncoderVoltage < 155 )
 		{
 			//default
 			if(operationMode != OPERATION_MODE_DEFAULT)
@@ -695,7 +695,7 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 			}
 
 		}
-		else if((currentEncoderVoltage >= 93) && (currentEncoderVoltage < 232))
+		else if((currentEncoderVoltage >= 155) && (currentEncoderVoltage < 310))
 		{
 			//first board BNC
 			if(operationMode != OPERATION_MODE_BNC)
@@ -707,7 +707,7 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 			}
 
 		}
-		else if((currentEncoderVoltage >= 232) && (currentEncoderVoltage < 384))
+		else if((currentEncoderVoltage >= 310) && (currentEncoderVoltage < 465))
 		{
 			//second board - Reaction timer
 
@@ -719,7 +719,7 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 
 			}
 		}
-		else if((currentEncoderVoltage >= 384) && (currentEncoderVoltage < 543))
+		else if((currentEncoderVoltage >= 465) && (currentEncoderVoltage < 620))
 		{
 			//third board - dev board
 
@@ -732,17 +732,17 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 			}
 
 		}
-		else if((currentEncoderVoltage >= 543) && (currentEncoderVoltage < 698))
+		else if((currentEncoderVoltage >= 620) && (currentEncoderVoltage < 775))
 		{
 			//forth board
 
 		}
-		else if((currentEncoderVoltage >= 698) && (currentEncoderVoltage < 853))
+		else if((currentEncoderVoltage >= 775) && (currentEncoderVoltage < 930))
 		{
 			//fifth board
 
 		}
-		else if((currentEncoderVoltage >= 853))
+		else if((currentEncoderVoltage >= 930))
 		{
 			//sixth board
 

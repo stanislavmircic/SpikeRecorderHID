@@ -182,6 +182,7 @@ void main (void)
 
        while (1)
        {
+    	   P4OUT ^= RELAY_OUTPUT;
            switch (USB_connectionState())
            {
 			   // This case is executed while your device is connected to the USB
@@ -344,6 +345,7 @@ void setupOperationMode(void)
 
 		break;
 	}
+
 	__enable_interrupt();
 }
 
@@ -464,6 +466,15 @@ void executeCommand(char * command)
    else if (!(strcmp(parameter, "c"))){//number of channels
 
 	   return;
+   }
+   else if (!(strcmp(parameter, "update")))
+   {
+	    USB_reset();
+	   __disable_interrupt(); // Ensure no application interrupts fire during BSL
+
+	   ((void (*)())0x1000)(); // This sends execution to the BSL. When execution
+	   // returns to the user app, it will be via the reset
+
    }
 }
 

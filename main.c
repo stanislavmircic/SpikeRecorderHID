@@ -98,8 +98,8 @@ unsigned int RTSpeakerFrequency = 10;
 unsigned int RTFrequencyGeneratorCounter = 0;
 unsigned int stimulusChoosen =0;
 
-
-
+//flag to start BSL
+unsigned int enterTheBSL = 0;
 
 //changes when we detect board
 unsigned int operationMode = 0;
@@ -153,6 +153,7 @@ void main (void)
        setupPeriodicTimer();   //setup periodic timer for sampling
 
        counterd = 0;
+       enterTheBSL = 0;
 
        //setup buffers variables for ADC sampling
        weUseBufferX = 1;
@@ -182,7 +183,15 @@ void main (void)
 
        while (1)
        {
-    	   P4OUT ^= RELAY_OUTPUT;
+
+    	   if(enterTheBSL)
+    	   {
+    		   	   USB_disconnect(); //disconnect from USB and enable BSL to enumerate again
+    		   	   __disable_interrupt(); // Ensure no application interrupts fire during BSL
+    		   	   ((void (*)())0x1000)(); // This sends execution to the BSL. When execution
+    	   }
+
+    	   //P4OUT ^= RELAY_OUTPUT;
            switch (USB_connectionState())
            {
 			   // This case is executed while your device is connected to the USB
@@ -469,12 +478,8 @@ void executeCommand(char * command)
    }
    else if (!(strcmp(parameter, "update")))
    {
-	    USB_reset();
-	   __disable_interrupt(); // Ensure no application interrupts fire during BSL
-
-	   ((void (*)())0x1000)(); // This sends execution to the BSL. When execution
-	   // returns to the user app, it will be via the reset
-
+	   // enter the BSL flag. It will enter in the main loop
+	   enterTheBSL = 1;
    }
 }
 

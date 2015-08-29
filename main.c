@@ -36,8 +36,8 @@
 #define OPERATION_MODE_ARDUINO_BOARD 3
 #define OPERATION_MODE_MORE_ANALOG 4
 
-#define TEN_K_SAMPLE_RATE 350
-#define HALF_SAMPLE_RATE 799
+#define TEN_K_SAMPLE_RATE 2500
+#define HALF_SAMPLE_RATE 3799
 
 #define GREEN_LED BIT0
 #define RED_LED BIT1
@@ -532,6 +532,31 @@ void sendStringWithEscapeSequence(char * stringToSend)
 					}
 				}
 		}
+		int k;
+		for(k=i;k<24;k++)
+		{
+
+			if(weUseBufferX==1)
+			{
+				bufferX[writingHeadX++] = 0;
+				if(writingHeadX>=MEGA_DATA_LENGTH)
+				{
+					writingHeadY = 0;
+					weUseBufferX = 0;
+					weHaveDataToSend = 1;
+				}
+			}
+			else
+			{
+				bufferY[writingHeadY++] = 0;
+				if(writingHeadY>=MEGA_DATA_LENGTH)
+				{
+					writingHeadX = 0;
+					weUseBufferX = 1;
+					weHaveDataToSend = 1;
+				}
+			}
+		}
 	}
 	else   //if we are not sending samples right now
 	{
@@ -621,6 +646,8 @@ void __attribute__ ((interrupt(TIMER0_A0_VECTOR))) TIMER0_A0_ISR (void)
 #endif
 {
 	//P4OUT ^= BIT1;
+
+
 	ADC12CTL0 |= ADC12ENC + ADC12SC;
     //__bic_SR_register_on_exit(LPM3_bits);   // Exit LPM
 }
@@ -654,7 +681,7 @@ void defaultSetupADC()
    ADC12MCTL4 = ADC12INCH_7+ADC12EOS;//board detection input
    //ADC12IE = 0x02;//enable interrupt on ADC12IFG2 bit
 
-   ADC12IE = BIT0;//trigger interrupt after conversation of A2
+   ADC12IE = ADC12IE4;//trigger interrupt after conversation of A2
    ADC12CTL0 &= ~ADC12SC;
  //  ADC12CTL0 |= ADC12ENC; // Enable conversion
 
@@ -921,34 +948,18 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 
 	//========== ADC code ======================
 
-if(sampleData == 1)
-{
-	if(weUseBufferX==1)
+	if(sampleData == 1)
 	{
-		tempIndex = writingHeadX;//remember position of begining of frame to put flag bit
-		tempADCresult = ADC12MEM0;
-
-
-		bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
-		bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
-
-		tempADCresult = ADC12MEM1;
-		bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
-		bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
-		if(writingHeadX>=MEGA_DATA_LENGTH)
+		if(weUseBufferX==1)
 		{
-			writingHeadY = 0;
-			weUseBufferX = 0;
-			weHaveDataToSend = 1;
-		}
+			tempIndex = writingHeadX;//remember position of begining of frame to put flag bit
+			tempADCresult = ADC12MEM0;
 
-		if(numberOfChannels>2)
-		{
-			tempADCresult = ADC12MEM2;
+
 			bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
 			bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
 
-			tempADCresult = ADC12MEM3;
+			tempADCresult = ADC12MEM1;
 			bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
 			bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
 			if(writingHeadX>=MEGA_DATA_LENGTH)
@@ -958,43 +969,41 @@ if(sampleData == 1)
 				weHaveDataToSend = 1;
 			}
 
-		}
+			if(numberOfChannels>2)
+			{
+				tempADCresult = ADC12MEM2;
+				bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
+				bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
 
-		bufferX[tempIndex] |= BIT7;//put flag for begining of frame
+				tempADCresult = ADC12MEM3;
+				bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
+				bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
+				if(writingHeadX>=MEGA_DATA_LENGTH)
+				{
+					writingHeadY = 0;
+					weUseBufferX = 0;
+					weHaveDataToSend = 1;
+				}
 
-	}
-	else
-	{
+			}
 
-		tempIndex = writingHeadY;//remember position of begining of frame to put flag bit
-
-		tempADCresult = ADC12MEM0;
-
-
-		bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
-		bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
-
-
-
-		tempADCresult = ADC12MEM1;
-		bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
-		bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
-		if(writingHeadY>=MEGA_DATA_LENGTH)
-		{
-			writingHeadX = 0;
-			weUseBufferX = 1;
-			weHaveDataToSend = 1;
+			bufferX[tempIndex] |= BIT7;//put flag for begining of frame
 
 		}
-
-		if(numberOfChannels>2)
+		else
 		{
-			tempADCresult = ADC12MEM2;
+
+			tempIndex = writingHeadY;//remember position of begining of frame to put flag bit
+
+			tempADCresult = ADC12MEM0;
+
+
 			bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
 			bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
 
 
-			tempADCresult = ADC12MEM3;
+
+			tempADCresult = ADC12MEM1;
 			bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
 			bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
 			if(writingHeadY>=MEGA_DATA_LENGTH)
@@ -1004,17 +1013,35 @@ if(sampleData == 1)
 				weHaveDataToSend = 1;
 
 			}
+
+			if(numberOfChannels>2)
+			{
+				tempADCresult = ADC12MEM2;
+				bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
+				bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
+
+
+				tempADCresult = ADC12MEM3;
+				bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
+				bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
+				if(writingHeadY>=MEGA_DATA_LENGTH)
+				{
+					writingHeadX = 0;
+					weUseBufferX = 1;
+					weHaveDataToSend = 1;
+
+				}
+			}
+
+			bufferY[tempIndex] |= BIT7;
+
 		}
-
-		bufferY[tempIndex] |= BIT7;
-
 	}
-}
-else
-{
-	tempADCresult = ADC12MEM0;
-	tempADCresult = ADC12MEM1;
-}
+	else
+	{
+		tempADCresult = ADC12MEM0;
+		tempADCresult = ADC12MEM1;
+	}
 //Uncomment this when not using repeat of sequence
 	ADC12CTL0 &= ~ADC12SC;
 }

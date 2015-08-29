@@ -32,8 +32,12 @@
 //operation modes
 #define OPERATION_MODE_DEFAULT 0
 #define OPERATION_MODE_BNC 1
-#define OPERATION_MODE_REACTION_TIMER 2
-#define OPERATION_MODE_DEV_BOARD 3
+#define OPERATION_MODE_FIVE_DIGITAL 2
+#define OPERATION_MODE_ARDUINO_BOARD 3
+#define OPERATION_MODE_MORE_ANALOG 4
+
+#define TEN_K_SAMPLE_RATE 350
+#define HALF_SAMPLE_RATE 799
 
 #define GREEN_LED BIT0
 #define RED_LED BIT1
@@ -44,6 +48,8 @@
 #define IO3 BIT4
 #define IO4 BIT5
 #define IO5 BIT6
+
+unsigned int debugEvent = 0;
 
 //===============================================
 
@@ -62,7 +68,7 @@ char *parameterDeimiter = ":";
 
 
 
-#define MEGA_DATA_LENGTH 124//992
+#define MEGA_DATA_LENGTH 248//992
 #define RECEIVE_BUFFER_LENGTH 62
 uint8_t bufferX[MEGA_DATA_LENGTH];
 uint8_t bufferY[MEGA_DATA_LENGTH];
@@ -73,30 +79,24 @@ unsigned int writingHeadY;
 unsigned int weUseBufferX;
 
 unsigned int tempIndex = 0;//used for parsing config parameters etc.
-unsigned int counterd = 0;
-unsigned int weHaveDataToSend = 0;
-unsigned int numberOfChannels = 2;
+unsigned int counterd = 0;//debug counter
 
+unsigned int weHaveDataToSend = 0;//complete data available in buffer - flag
+unsigned int numberOfChannels = 2;//current number of channels
+
+//debouncer variables
 //used for events in normal mode and reaction timer
 unsigned int debounceTimer1 = 0;
 unsigned int debounceTimer2 = 0;
+unsigned int debounceTimer3 = 0;
+unsigned int debounceTimer4 = 0;
+unsigned int debounceTimer5 = 0;
 unsigned int eventEnabled1 = 1;
 unsigned int eventEnabled2 = 1;
+unsigned int eventEnabled3 = 1;
+unsigned int eventEnabled4 = 1;
+unsigned int eventEnabled5 = 1;
 
-
-//reaction timer mode
-unsigned int stimulationEnabled = 0;
-unsigned int oneShotStimmulation = 1;
-unsigned int reactionTimerMode = 0;
-unsigned int mainStimulusRTCounter = 0;
-unsigned int durationStimulusRTCounter = 0;
-#define STIMULUS_DELAY 40000
-#define STIMULUS_DURATION 2200
-#define RT_FREQUENCY_FIRST 10
-#define RT_FREQUENCY_SECOND 20
-unsigned int RTSpeakerFrequency = 10;
-unsigned int RTFrequencyGeneratorCounter = 0;
-unsigned int stimulusChoosen =0;
 
 //flag to start BSL
 unsigned int enterTheBSL = 0;
@@ -113,6 +113,9 @@ unsigned int debounceEncoderTimer = 0;
 //flag that is active when board detection voltage stabilize
 unsigned int encoderEnabled = 0;
 
+//enable sampling of analog channels
+//if zero sample timer will work but we will not
+//collect any analog data
 unsigned int sampleData = 0;
 
 
@@ -145,11 +148,11 @@ void main (void)
 #endif
     
        initPorts();            // Config GPIOS for low-power (output low)
-       initClocks(16000000);   // Config clocks. MCLK=SMCLK=FLL=8MHz; ACLK=REFO=32kHz
+       initClocks(25000000);   // Config clocks. MCLK=SMCLK=FLL=8MHz; ACLK=REFO=32kHz
        USB_setup(TRUE, TRUE);  // Init USB & events; if a host is present, connect
        operationMode = OPERATION_MODE_DEFAULT;
-       setupOperationMode();   //setup GPIO
        defaultSetupADC();
+       setupOperationMode();   //setup GPIO
        setupPeriodicTimer();   //setup periodic timer for sampling
 
        counterd = 0;
@@ -184,14 +187,14 @@ void main (void)
        while (1)
        {
 
-    	   if(enterTheBSL)
+    	   if(enterTheBSL)//if we should update firmware
     	   {
     		   	   USB_disconnect(); //disconnect from USB and enable BSL to enumerate again
     		   	   __disable_interrupt(); // Ensure no application interrupts fire during BSL
-    		   	   ((void (*)())0x1000)(); // This sends execution to the BSL. When execution
+    		   	   ((void (*)())0x1000)(); // This sends execution to the BSL.
     	   }
 
-    	   //P4OUT ^= RELAY_OUTPUT;
+
            switch (USB_connectionState())
            {
 			   // This case is executed while your device is connected to the USB
@@ -225,14 +228,14 @@ void main (void)
 
             	   if(weHaveDataToSend >0 && bHIDDataSent_event)
             	   {
+            		   if(debugEvent ==1)
+            		   {
+            			   debugEvent = 0;
+
+            		   }
+
             		   weHaveDataToSend = 0;
             		   bHIDDataSent_event = FALSE;
-            		  /* counterd++;
-            		   if(counterd>1000)
-            		   {
-            		   		counterd = 0;
-
-            		   }*/
                 	   if(weUseBufferX)
                 	   {
                            if (hidSendDataInBackground((uint8_t*)bufferY,MEGA_DATA_LENGTH,
@@ -306,6 +309,8 @@ void setupOperationMode(void)
 	switch(operationMode)
 	{
 		case OPERATION_MODE_BNC:
+			TA0CCR0 = TEN_K_SAMPLE_RATE;
+			numberOfChannels = 2;
 			P6SEL = BIT0+BIT1+BIT7;//analog inputs
 			P6DIR = 0;//select all as inputs
 			P6OUT = 0;//put output register to zero
@@ -313,11 +318,13 @@ void setupOperationMode(void)
 			//default setup of ADC, redefines part of Port 6 pins
 			//defaultSetupADC();
 		break;
-		case OPERATION_MODE_REACTION_TIMER:
+		case OPERATION_MODE_FIVE_DIGITAL:
+		case OPERATION_MODE_ARDUINO_BOARD:
+			TA0CCR0 = TEN_K_SAMPLE_RATE;
+			numberOfChannels = 2;
 			P6SEL = BIT0+BIT1+BIT7;//select analog inputs
-			//select two swithes to inputs (BIT6 and BIT5)
-			//rest is output (BIT2 - speaker, BIT3 & BIT4 are LEDs)
-			P6DIR = IO1+IO2+IO3;
+			//set all to inputs
+			P6DIR = 0;
 			P6OUT = 0;//put output register to zero
 
 			P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);
@@ -325,25 +332,29 @@ void setupOperationMode(void)
 			//default setup of ADC, redefines part of Port 6 pins
 			//defaultSetupADC();
 		break;
-		case OPERATION_MODE_DEV_BOARD:
-			P6SEL = BIT0+BIT1+BIT7;//select analog inputs
-			P6DIR = 0;
+		case OPERATION_MODE_MORE_ANALOG:
+			TA0CCR0 = HALF_SAMPLE_RATE;
+			numberOfChannels = 4;
+			//make 4 analog inputs and additional for encoder
+			P6SEL = BIT0+BIT1+IO4+IO5 +BIT7;
+			P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);
+			P4OUT |=  GREEN_LED;
+
+		break;
+		case OPERATION_MODE_DEFAULT:
+			TA0CCR0 = TEN_K_SAMPLE_RATE;
+			numberOfChannels = 2;
+			P6SEL = BIT0+BIT1+BIT7;//select all pins as digital I/O
+			P6DIR = 0;//select all as inputs
 			P6OUT = 0;//put output register to zero
 
 			P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);
-			P4OUT |=  GREEN_LED;
+			//default setup of ADC, redefines part of Port 6 pins
+			//defaultSetupADC();
 		break;
-		case OPERATION_MODE_DEFAULT:
-					P6SEL = BIT0+BIT1+BIT7;//select all pins as digital I/O
-					P6DIR = 0;//select all as inputs
-					P6OUT = 0;//put output register to zero
-
-					P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);
-					//default setup of ADC, redefines part of Port 6 pins
-					//defaultSetupADC();
-				break;
 		default:
-
+			TA0CCR0 = TEN_K_SAMPLE_RATE;
+			numberOfChannels = 2;
 			P6SEL = BIT0+BIT1+BIT7;//select all pins as digital I/O
 			P6DIR = 0;//select all as inputs
 			P6OUT = 0;//put output register to zero
@@ -426,44 +437,21 @@ void executeCommand(char * command)
 	   		case OPERATION_MODE_BNC:
 	   			sendStringWithEscapeSequence("BRD:1;");
 	   		break;
-	   		case OPERATION_MODE_REACTION_TIMER:
+	   		case OPERATION_MODE_FIVE_DIGITAL:
 	   			sendStringWithEscapeSequence("BRD:2;");
 	   		break;
-	   		case OPERATION_MODE_DEV_BOARD:
+	   		case OPERATION_MODE_ARDUINO_BOARD:
 				sendStringWithEscapeSequence("BRD:3;");
 			break;
+	   		case OPERATION_MODE_MORE_ANALOG:
+	   			sendStringWithEscapeSequence("BRD:4;");
+	   		break;
 	   		case OPERATION_MODE_DEFAULT:
 				sendStringWithEscapeSequence("BRD:0;");
 			break;
 	   	}
    	   return;
       }
-   else if (!(strcmp(parameter, "rtrepeat"))){//get info if RT is repeating
-      	   //TA0CCTL0 = CCIE;
-   	   if(oneShotStimmulation)
-   	   	{
-   	   		sendStringWithEscapeSequence("RTR:0;");
-   	   	}
-		else
-		{
-   	   		sendStringWithEscapeSequence("RTR:1;");
-   	   	}
-      	return;
-    }
-   else if (!(strcmp(parameter, "srtrepeat"))){//swap RT repeat mode repeat/non-repeat
-         	   //TA0CCTL0 = CCIE;
-	   	if(oneShotStimmulation)
-      	   	{
-	   		oneShotStimmulation =0;
-	   		stimulationEnabled = 1;
-      	   	}
-   		else
-   		{
-   			oneShotStimmulation = 1;
-   			stimulationEnabled = 0;
-      	}
-         	return;
-   }
    else if (!(strcmp(parameter, "s"))){//sample rate
 
 	   return;
@@ -518,7 +506,7 @@ void sendStringWithEscapeSequence(char * stringToSend)
 	//check if sampling timer is turned ON
 	int weAreSendingSamples = TA0CCTL0 & CCIE;
 
-	if(weAreSendingSamples)
+	if(sampleData==1)
 	{
 		//now put it to output buffer/s
 		for(i=0;i<length;i++)
@@ -617,7 +605,7 @@ void sendStringWithEscapeSequence(char * stringToSend)
 
 void setupPeriodicTimer()
 {
-	TA0CCR0 = 799;//32768=1sec;
+	TA0CCR0 = TEN_K_SAMPLE_RATE;//32768=1sec;
 	TA0CTL = TASSEL_2+MC_1+TACLR; // ACLK, count to CCR0 then roll, clear TAR
 	TA0CCTL0 = CCIE;
 }
@@ -641,6 +629,8 @@ void __attribute__ ((interrupt(TIMER0_A0_VECTOR))) TIMER0_A0_ISR (void)
 
 void defaultSetupADC()
 {
+	//P4OUT ^= RELAY_OUTPUT;
+
    //select recording inputs and board detection input(A7)
    //as analog inputs
    P6SEL |= BIT0+BIT1+BIT7;
@@ -659,7 +649,9 @@ void defaultSetupADC()
    // Use A0 as input to register 0
    ADC12MCTL0 = ADC12INCH_0;//recording channel
    ADC12MCTL1 = ADC12INCH_1;//recording channel
-   ADC12MCTL2 = ADC12INCH_7+ADC12EOS;//board detection input
+   ADC12MCTL2 = ADC12INCH_5;//recording channel
+   ADC12MCTL3 = ADC12INCH_6;//recording channel
+   ADC12MCTL4 = ADC12INCH_7+ADC12EOS;//board detection input
    //ADC12IE = 0x02;//enable interrupt on ADC12IFG2 bit
 
    ADC12IE = BIT0;//trigger interrupt after conversation of A2
@@ -679,10 +671,11 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 #endif
 {
 
-
+	//P4OUT ^= RED_LED;
+	//P4OUT ^= RED_LED;
 	// ------------------- BOARD DETECTION -----------------------------
 
-	currentEncoderVoltage = ADC12MEM2;
+	currentEncoderVoltage = ADC12MEM4;
 
 	if(debounceEncoderTimer>0)
 	{
@@ -714,9 +707,9 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 		else if((currentEncoderVoltage >= 155) && (currentEncoderVoltage < 310))
 		{
 			//first board BNC
-			if(operationMode != OPERATION_MODE_BNC)
+			if(operationMode != OPERATION_MODE_MORE_ANALOG)
 			{
-				operationMode = OPERATION_MODE_BNC;
+				operationMode = OPERATION_MODE_MORE_ANALOG;
 				sendStringWithEscapeSequence("BRD:1;");
 				setupOperationMode();
 
@@ -727,9 +720,9 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 		{
 			//second board - Reaction timer
 
-			if(operationMode != OPERATION_MODE_REACTION_TIMER)
+			if(operationMode != OPERATION_MODE_FIVE_DIGITAL)
 			{
-				operationMode = OPERATION_MODE_REACTION_TIMER;
+				operationMode = OPERATION_MODE_FIVE_DIGITAL;
 				sendStringWithEscapeSequence("BRD:2;");
 				setupOperationMode();
 
@@ -739,9 +732,9 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 		{
 			//third board - dev board
 
-			if(operationMode != OPERATION_MODE_DEV_BOARD)
+			if(operationMode != OPERATION_MODE_BNC)
 			{
-				operationMode = OPERATION_MODE_DEV_BOARD;
+				operationMode = OPERATION_MODE_BNC;
 				sendStringWithEscapeSequence("BRD:3;");
 				setupOperationMode();
 
@@ -751,7 +744,13 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 		else if((currentEncoderVoltage >= 620) && (currentEncoderVoltage < 775))
 		{
 			//forth board
+			if(operationMode != OPERATION_MODE_ARDUINO_BOARD)
+			{
+				operationMode = OPERATION_MODE_ARDUINO_BOARD;
+				sendStringWithEscapeSequence("BRD:4;");
+				setupOperationMode();
 
+			}
 		}
 		else if((currentEncoderVoltage >= 775) && (currentEncoderVoltage < 930))
 		{
@@ -774,143 +773,68 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 	switch(operationMode)
 		{
 
-			case OPERATION_MODE_REACTION_TIMER:
-				//============== button 1 - mode selection RT =================
 
-				if(debounceTimer1>0)
+			case OPERATION_MODE_FIVE_DIGITAL:
+			case OPERATION_MODE_ARDUINO_BOARD:
+				//two additional digital inputs
+
+				//================= EVENT 4 code ======================
+
+				if(debounceTimer4>0)
 				{
-					debounceTimer1 = debounceTimer1 -1;
+					debounceTimer4 = debounceTimer4 -1;
 				}
 				else
 				{
-					if(eventEnabled1>0)
+					if(eventEnabled4>0)
+					{
+							if(P6IN & IO4)
+							{
+									eventEnabled4 = 0;
+									debounceTimer4 = DEBOUNCE_TIME;
+									sendStringWithEscapeSequence("EVNT:4;");
+							}
+					}
+					else
+					{
+						if(!(P6IN & IO4))
+						{
+							eventEnabled4 = 1;
+						}
+
+					}
+				}
+
+				//================= EVENT 5 code ======================
+
+				if(debounceTimer5>0)
+				{
+					debounceTimer5 = debounceTimer5 -1;
+				}
+				else
+				{
+					if(eventEnabled5>0)
 					{
 							if(P6IN & IO5)
 							{
-									eventEnabled1 = 0;
-									debounceTimer1 = DEBOUNCE_TIME;
-									reactionTimerMode = 0;
-									mainStimulusRTCounter = STIMULUS_DELAY - 150;
-									P6OUT &= ~(IO3 + IO2 + IO1);//reset here because of speaker
-									stimulationEnabled = 1;
-									//sendStringWithEscapeSequence("EVNT:1;");
+									eventEnabled5 = 0;
+									debounceTimer5 = DEBOUNCE_TIME;
+									sendStringWithEscapeSequence("EVNT:5;");
 							}
 					}
 					else
 					{
 						if(!(P6IN & IO5))
 						{
-							eventEnabled1 = 1;
-						}
-					}
-				}
-
-				//================= button 2 RT mode selection ======================
-
-				if(debounceTimer2>0)
-					{
-						debounceTimer2 = debounceTimer2 -1;
-					}
-					else
-					{
-						if(eventEnabled2>0)
-						{
-								if(P6IN & IO4)
-								{
-										eventEnabled2 = 0;
-										debounceTimer2 = DEBOUNCE_TIME;
-										reactionTimerMode = 1;
-										mainStimulusRTCounter = STIMULUS_DELAY - 150;
-										P6OUT &= ~(IO3 + IO2 + IO1);//reset here because of speaker
-										//sendStringWithEscapeSequence("EVNT:2;");
-										stimulationEnabled = 1;
-								}
-						}
-						else
-						{
-							if(!(P6IN & IO4))
-							{
-								eventEnabled2 = 1;
-							}
-
-						}
-					}
-
-			//----------- Reaction Timer functionality based on mode------------------------
-				if(stimulationEnabled)
-				{
-					mainStimulusRTCounter++;
-				}
-
-				if(STIMULUS_DELAY == mainStimulusRTCounter)
-				{
-					mainStimulusRTCounter = 0;
-					if(oneShotStimmulation)
-					{
-						stimulationEnabled = 0;
-					}
-					stimulusChoosen = currentEncoderVoltage & BIT0;
-					if(reactionTimerMode)
-					{
-						//sound mode
-						if(stimulusChoosen)
-						{
-							RTSpeakerFrequency = RT_FREQUENCY_FIRST;
-							sendStringWithEscapeSequence("EVNT:1;");
-						}
-						else
-						{
-							RTSpeakerFrequency = RT_FREQUENCY_SECOND;
-							sendStringWithEscapeSequence("EVNT:2;");
-						}
-						RTFrequencyGeneratorCounter = 0;
-						P6OUT ^= IO1;
-					}
-					else
-					{
-						//LED mode
-						if(stimulusChoosen)
-						{
-							P6OUT |= IO2;
-							sendStringWithEscapeSequence("EVNT:1;");
-						}
-						else
-						{
-							P6OUT |= IO3;
-							sendStringWithEscapeSequence("EVNT:2;");
+							eventEnabled5 = 1;
 						}
 
-					}
-
-					//set stimulus duration count down timer
-					durationStimulusRTCounter = STIMULUS_DURATION;
-				}
-
-
-				if(durationStimulusRTCounter==0)
-				{
-					//set LEDs and Speeker on zerro when stimulus duration runs out
-					P6OUT &= ~(IO3 + IO2 + IO1);
-				}
-				else
-				{
-					//count down stimulus duration - decrement
-					durationStimulusRTCounter--;
-					if(reactionTimerMode)
-					{
-						RTFrequencyGeneratorCounter++;
-						if(RTFrequencyGeneratorCounter == RTSpeakerFrequency)
-						{
-							RTFrequencyGeneratorCounter = 0;
-							P6OUT ^= IO1;
-						}
 					}
 				}
 
 
-			break;
 			case OPERATION_MODE_BNC:
-			case OPERATION_MODE_DEV_BOARD:
+			case OPERATION_MODE_MORE_ANALOG:
 			default:
 				//============== event 1 =================
 
@@ -926,6 +850,7 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 								{
 										eventEnabled1 = 0;
 										debounceTimer1 = DEBOUNCE_TIME;
+										debugEvent = 1;
 										sendStringWithEscapeSequence("EVNT:1;");
 								}
 						}
@@ -941,29 +866,56 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 					//================= EVENT 2 code ======================
 
 					if(debounceTimer2>0)
+					{
+						debounceTimer2 = debounceTimer2 -1;
+					}
+					else
+					{
+						if(eventEnabled2>0)
 						{
-							debounceTimer2 = debounceTimer2 -1;
+								if(P6IN & IO2)
+								{
+										eventEnabled2 = 0;
+										debounceTimer2 = DEBOUNCE_TIME;
+										sendStringWithEscapeSequence("EVNT:2;");
+								}
 						}
 						else
 						{
-							if(eventEnabled2>0)
+							if(!(P6IN & IO2))
 							{
-									if(P6IN & IO2)
-									{
-											eventEnabled2 = 0;
-											debounceTimer2 = DEBOUNCE_TIME;
-											sendStringWithEscapeSequence("EVNT:2;");
-									}
+								eventEnabled2 = 1;
 							}
-							else
-							{
-								if(!(P6IN & IO2))
-								{
-									eventEnabled2 = 1;
-								}
 
-							}
 						}
+					}
+
+					//================= EVENT 3 code ======================
+
+					if(debounceTimer3>0)
+					{
+						debounceTimer3 = debounceTimer3 -1;
+					}
+					else
+					{
+						if(eventEnabled3>0)
+						{
+								if(P6IN & IO3)
+								{
+										eventEnabled3 = 0;
+										debounceTimer3 = DEBOUNCE_TIME;
+										sendStringWithEscapeSequence("EVNT:3;");
+								}
+						}
+						else
+						{
+							if(!(P6IN & IO3))
+							{
+								eventEnabled3 = 1;
+							}
+
+						}
+					}
 
 		}
 
@@ -977,30 +929,38 @@ if(sampleData == 1)
 		tempADCresult = ADC12MEM0;
 
 
-				bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
-				bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
-				if(writingHeadX>=MEGA_DATA_LENGTH)
-				{
-					writingHeadY = 0;
-					weUseBufferX = 0;
-					weHaveDataToSend = 1;
-				}
+		bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
+		bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
 
-				if(numberOfChannels>1)
-				{
-					tempADCresult = ADC12MEM1;
-					bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
-					bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
-					if(writingHeadX>=MEGA_DATA_LENGTH)
-					{
-						writingHeadY = 0;
-						weUseBufferX = 0;
-						weHaveDataToSend = 1;
-					}
+		tempADCresult = ADC12MEM1;
+		bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
+		bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
+		if(writingHeadX>=MEGA_DATA_LENGTH)
+		{
+			writingHeadY = 0;
+			weUseBufferX = 0;
+			weHaveDataToSend = 1;
+		}
 
-				}
+		if(numberOfChannels>2)
+		{
+			tempADCresult = ADC12MEM2;
+			bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
+			bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
 
-				bufferX[tempIndex] |= BIT7;//put flag for begining of frame
+			tempADCresult = ADC12MEM3;
+			bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
+			bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
+			if(writingHeadX>=MEGA_DATA_LENGTH)
+			{
+				writingHeadY = 0;
+				weUseBufferX = 0;
+				weHaveDataToSend = 1;
+			}
+
+		}
+
+		bufferX[tempIndex] |= BIT7;//put flag for begining of frame
 
 	}
 	else
@@ -1011,32 +971,42 @@ if(sampleData == 1)
 		tempADCresult = ADC12MEM0;
 
 
-				bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
-				bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
-				if(writingHeadY>=MEGA_DATA_LENGTH)
-				{
-					writingHeadX = 0;
-					weUseBufferX = 1;
-					weHaveDataToSend = 1;
+		bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
+		bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
 
-				}
 
-				if(numberOfChannels>1)
-				{
-					tempADCresult = ADC12MEM1;
-					bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
-					bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
-					if(writingHeadY>=MEGA_DATA_LENGTH)
-					{
-						writingHeadX = 0;
-						weUseBufferX = 1;
-						weHaveDataToSend = 1;
 
-					}
+		tempADCresult = ADC12MEM1;
+		bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
+		bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
+		if(writingHeadY>=MEGA_DATA_LENGTH)
+		{
+			writingHeadX = 0;
+			weUseBufferX = 1;
+			weHaveDataToSend = 1;
 
-				}
+		}
 
-				bufferY[tempIndex] |= BIT7;
+		if(numberOfChannels>2)
+		{
+			tempADCresult = ADC12MEM2;
+			bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
+			bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
+
+
+			tempADCresult = ADC12MEM3;
+			bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
+			bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
+			if(writingHeadY>=MEGA_DATA_LENGTH)
+			{
+				writingHeadX = 0;
+				weUseBufferX = 1;
+				weHaveDataToSend = 1;
+
+			}
+		}
+
+		bufferY[tempIndex] |= BIT7;
 
 	}
 }

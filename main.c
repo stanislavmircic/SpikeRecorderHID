@@ -438,13 +438,13 @@ void executeCommand(char * command)
 	   			sendStringWithEscapeSequence("BRD:1;");
 	   		break;
 	   		case OPERATION_MODE_FIVE_DIGITAL:
-	   			sendStringWithEscapeSequence("BRD:2;");
+	   			sendStringWithEscapeSequence("BRD:3;");
 	   		break;
 	   		case OPERATION_MODE_ARDUINO_BOARD:
-				sendStringWithEscapeSequence("BRD:3;");
+				sendStringWithEscapeSequence("BRD:4;");
 			break;
 	   		case OPERATION_MODE_MORE_ANALOG:
-	   			sendStringWithEscapeSequence("BRD:4;");
+	   			sendStringWithEscapeSequence("BRD:1;");
 	   		break;
 	   		case OPERATION_MODE_DEFAULT:
 				sendStringWithEscapeSequence("BRD:0;");

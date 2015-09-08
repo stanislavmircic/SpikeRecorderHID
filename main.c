@@ -48,8 +48,12 @@
 #define IO3 BIT4
 #define IO4 BIT5
 #define IO5 BIT6
+//p5.1 = A9 is used to correct Vcc/2 offset
+#define VCCTWO BIT1
 
 unsigned int debugEvent = 0;
+int correctionVccOverTwo = 0;
+unsigned int tempCorrectionVariable = 0;
 
 //===============================================
 
@@ -178,6 +182,10 @@ void main (void)
        P4SEL = 0;//digital I/O
        P4DIR = GREEN_LED + RED_LED + RELAY_OUTPUT;
        P4OUT = 0;
+
+       //set A9 for Vcc/2 reference (for offset correction)
+       REFCTL0 &= ~REFON;//turn off ref. function
+       P5SEL |= VCCTWO;
 
 
 
@@ -647,7 +655,7 @@ void __attribute__ ((interrupt(TIMER0_A0_VECTOR))) TIMER0_A0_ISR (void)
 {
 	//P4OUT ^= BIT1;
 
-
+	P4OUT ^= RELAY_OUTPUT;
 	ADC12CTL0 |= ADC12ENC + ADC12SC;
     //__bic_SR_register_on_exit(LPM3_bits);   // Exit LPM
 }
@@ -679,6 +687,7 @@ void defaultSetupADC()
    ADC12MCTL2 = ADC12INCH_5;//recording channel
    ADC12MCTL3 = ADC12INCH_6;//recording channel
    ADC12MCTL4 = ADC12INCH_7+ADC12EOS;//board detection input
+   //ADC12MCTL5 = ADC12INCH_9 +ADC12EOS;
    //ADC12IE = 0x02;//enable interrupt on ADC12IFG2 bit
 
    ADC12IE = ADC12IE4;//trigger interrupt after conversation of A2
@@ -698,11 +707,18 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 #endif
 {
 
-	//P4OUT ^= RED_LED;
-	//P4OUT ^= RED_LED;
+	P4OUT |= RED_LED;
+	//
 	// ------------------- BOARD DETECTION -----------------------------
 
+	//calculate offset correction
+	//tempADCresult = ADC12MEM5;
+	tempADCresult = 512;
+	correctionVccOverTwo = tempADCresult-512;
+	tempCorrectionVariable = 1023+correctionVccOverTwo;
+
 	currentEncoderVoltage = ADC12MEM4;
+
 
 	if(debounceEncoderTimer>0)
 	{
@@ -955,11 +971,39 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 			tempIndex = writingHeadX;//remember position of begining of frame to put flag bit
 			tempADCresult = ADC12MEM0;
 
+			//correct DC offset
+			if((int)tempADCresult<correctionVccOverTwo)
+			{
+				tempADCresult = 0;
+			}
+			else if(tempCorrectionVariable<tempADCresult)
+			{
+					tempADCresult = 1023;
+			}
+			else
+			{
+				tempADCresult = tempADCresult - correctionVccOverTwo;
+			}
 
 			bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
 			bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
 
 			tempADCresult = ADC12MEM1;
+
+			//correct DC offset
+			if((int)tempADCresult<correctionVccOverTwo)
+			{
+				tempADCresult = 0;
+			}
+			else if(tempCorrectionVariable<(int)tempADCresult)
+			{
+					tempADCresult = 1023;
+			}
+			else
+			{
+				tempADCresult = tempADCresult - correctionVccOverTwo;
+			}
+
 			bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
 			bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
 			if(writingHeadX>=MEGA_DATA_LENGTH)
@@ -972,10 +1016,36 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 			if(numberOfChannels>2)
 			{
 				tempADCresult = ADC12MEM2;
+				//correct DC offset
+				if((int)tempADCresult<correctionVccOverTwo)
+				{
+					tempADCresult = 0;
+				}
+				else if(tempCorrectionVariable<(int)tempADCresult)
+				{
+						tempADCresult = 1023;
+				}
+				else
+				{
+					tempADCresult = tempADCresult - correctionVccOverTwo;
+				}
 				bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
 				bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
 
 				tempADCresult = ADC12MEM3;
+				//correct DC offset
+				if((int)tempADCresult<correctionVccOverTwo)
+				{
+					tempADCresult = 0;
+				}
+				else if(tempCorrectionVariable<(int)tempADCresult)
+				{
+						tempADCresult = 1023;
+				}
+				else
+				{
+					tempADCresult = tempADCresult - correctionVccOverTwo;
+				}
 				bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
 				bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
 				if(writingHeadX>=MEGA_DATA_LENGTH)
@@ -996,7 +1066,19 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 			tempIndex = writingHeadY;//remember position of begining of frame to put flag bit
 
 			tempADCresult = ADC12MEM0;
-
+			//correct DC offset
+			if((int)tempADCresult<correctionVccOverTwo)
+			{
+				tempADCresult = 0;
+			}
+			else if(tempCorrectionVariable<(int)tempADCresult)
+			{
+					tempADCresult = 1023;
+			}
+			else
+			{
+				tempADCresult = tempADCresult - correctionVccOverTwo;
+			}
 
 			bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
 			bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
@@ -1004,6 +1086,19 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 
 
 			tempADCresult = ADC12MEM1;
+			//correct DC offset
+			if((int)tempADCresult<correctionVccOverTwo)
+			{
+				tempADCresult = 0;
+			}
+			else if(tempCorrectionVariable<(int)tempADCresult)
+			{
+					tempADCresult = 1023;
+			}
+			else
+			{
+				tempADCresult = tempADCresult - correctionVccOverTwo;
+			}
 			bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
 			bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
 			if(writingHeadY>=MEGA_DATA_LENGTH)
@@ -1017,11 +1112,37 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 			if(numberOfChannels>2)
 			{
 				tempADCresult = ADC12MEM2;
+				//correct DC offset
+				if((int)tempADCresult<correctionVccOverTwo)
+				{
+					tempADCresult = 0;
+				}
+				else if(tempCorrectionVariable<(int)tempADCresult)
+				{
+						tempADCresult = 1023;
+				}
+				else
+				{
+					tempADCresult = tempADCresult - correctionVccOverTwo;
+				}
 				bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
 				bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
 
 
 				tempADCresult = ADC12MEM3;
+				//correct DC offset
+				if((int)tempADCresult<correctionVccOverTwo)
+				{
+					tempADCresult = 0;
+				}
+				else if(tempCorrectionVariable<(int)tempADCresult)
+				{
+						tempADCresult = 1023;
+				}
+				else
+				{
+					tempADCresult = tempADCresult - correctionVccOverTwo;
+				}
 				bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
 				bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
 				if(writingHeadY>=MEGA_DATA_LENGTH)
@@ -1044,4 +1165,5 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 	}
 //Uncomment this when not using repeat of sequence
 	ADC12CTL0 &= ~ADC12SC;
+	P4OUT &= ~RED_LED;
 }

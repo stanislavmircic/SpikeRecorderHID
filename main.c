@@ -68,15 +68,18 @@ char *parameterDeimiter = ":";
 
 
 
-#define MEGA_DATA_LENGTH 248//992
+#define MEGA_DATA_LENGTH 2048//992
 #define RECEIVE_BUFFER_LENGTH 62
-uint8_t bufferX[MEGA_DATA_LENGTH];
-uint8_t bufferY[MEGA_DATA_LENGTH];
+
+uint8_t tempSendBuffer[62];
+uint8_t circularBuffer[MEGA_DATA_LENGTH];
 
 unsigned int tempADCresult;
-unsigned int writingHeadX;
-unsigned int writingHeadY;
-unsigned int weUseBufferX;
+unsigned int head;
+unsigned int tail;
+unsigned int difference;
+unsigned int generalIndexVar;
+
 
 unsigned int tempIndex = 0;//used for parsing config parameters etc.
 unsigned int counterd = 0;//debug counter
@@ -159,20 +162,13 @@ void main (void)
        enterTheBSL = 0;
 
        //setup buffers variables for ADC sampling
-       weUseBufferX = 1;
-       writingHeadY = 0;
-       writingHeadX = 0;
+       head = 0;
+       tail = 0;
+       difference = 0;
 
        //prepare state for USB
        bHIDDataSent_event = TRUE;
 
-       // Pre-fill the buffers with visible ASCII characters (0x21 to 0x7E)
-       y = 0x21;
-       for (w = 0; w < MEGA_DATA_LENGTH; w++)
-       {
-           bufferX[w] = y;
-           bufferY[w] = y;
-       }
 
        //LED diode (BIT0, BIT1) and relay (BIT7)
        P4SEL = 0;//digital I/O
@@ -202,6 +198,7 @@ void main (void)
 			   // in this mode; the MCU must be active or LPM0 during USB communication
                case ST_ENUM_ACTIVE:
 
+            	   //--------- receiving
             	   if(bHIDDataReceived_event)
             	   {
 
@@ -225,39 +222,29 @@ void main (void)
             		   bHIDDataReceived_event = FALSE;
             	   }
 
-
-            	   if(weHaveDataToSend >0 && bHIDDataSent_event)
+            	   // ----------- sending
+            	   if(difference >61 && bHIDDataSent_event)
             	   {
-            		   if(debugEvent ==1)
-            		   {
-            			   debugEvent = 0;
-
-            		   }
-
-            		   weHaveDataToSend = 0;
             		   bHIDDataSent_event = FALSE;
-                	   if(weUseBufferX)
-                	   {
-                           if (hidSendDataInBackground((uint8_t*)bufferY,MEGA_DATA_LENGTH,
-                          								   HID0_INTFNUM,0))
-                           {
-								   // Operation probably still open; cancel it
-								   USBHID_abortSend(&w,HID0_INTFNUM);
-								   break;
-                           }
+            		   for(generalIndexVar =0;generalIndexVar<62;generalIndexVar++)
+            		   {
+            			   tempSendBuffer[generalIndexVar] = circularBuffer[tail];
+            			   tail++;
+            			   if(tail==MEGA_DATA_LENGTH)
+            			   {
+            				   tail = 0;
+            			   }
+            		   }
+            		   difference -=62;
 
-                	   }
-                	   else
-                       {
+					   if (hidSendDataInBackground((uint8_t*)tempSendBuffer,62,
+													   HID0_INTFNUM,0))
+					   {
+							   // Operation probably still open; cancel it
+							   USBHID_abortSend(&w,HID0_INTFNUM);
+							   break;
+					   }
 
-                           if (hidSendDataInBackground((uint8_t*)bufferX,MEGA_DATA_LENGTH,
-                           								   HID0_INTFNUM,0))
-                           {
-                          	  	  // Operation probably still open; cancel it
-                           	   	   USBHID_abortSend(&w,HID0_INTFNUM);
-                           			break;
-                           }
-                       }
             	   }
 
                    break;
@@ -281,9 +268,9 @@ void main (void)
             	   //prepare buffer for next connection
             	   sampleData = 0;
             	   P4OUT &= ~(RED_LED);
-            	   weUseBufferX = 1;
-				   writingHeadY = 0;
-				   writingHeadX = 0;
+            	   head = 0;
+            	   tail = 0;
+            	   difference = 0;
 				   //setup flag in case somebody pull the USB plug while it was sending
             	   bHIDDataSent_event = TRUE;
                    break;
@@ -506,76 +493,33 @@ void sendStringWithEscapeSequence(char * stringToSend)
 	//check if sampling timer is turned ON
 	int weAreSendingSamples = TA0CCTL0 & CCIE;
 
-	if(sampleData==1)
-	{
+
 		//now put it to output buffer/s
 		for(i=0;i<length;i++)
 		{
-				if(weUseBufferX==1)
-				{
-					bufferX[writingHeadX++] = responseBufferWithEscape[i];
-					if(writingHeadX>=MEGA_DATA_LENGTH)
-					{
-						writingHeadY = 0;
-						weUseBufferX = 0;
-						weHaveDataToSend = 1;
-					}
-				}
-				else
-				{
-					bufferY[writingHeadY++] = responseBufferWithEscape[i];
-					if(writingHeadY>=MEGA_DATA_LENGTH)
-					{
-						writingHeadX = 0;
-						weUseBufferX = 1;
-						weHaveDataToSend = 1;
-					}
-				}
-		}
-		int k;
-		for(k=i;k<24;k++)
-		{
 
-			if(weUseBufferX==1)
-			{
-				bufferX[writingHeadX++] = 0;
-				if(writingHeadX>=MEGA_DATA_LENGTH)
-				{
-					writingHeadY = 0;
-					weUseBufferX = 0;
-					weHaveDataToSend = 1;
-				}
-			}
-			else
-			{
-				bufferY[writingHeadY++] = 0;
-				if(writingHeadY>=MEGA_DATA_LENGTH)
-				{
-					writingHeadX = 0;
-					weUseBufferX = 1;
-					weHaveDataToSend = 1;
-				}
-			}
+					circularBuffer[head++] = responseBufferWithEscape[i];
+					difference++;
+					if(head>=MEGA_DATA_LENGTH)
+					{
+						head = 0;
+					}
 		}
-	}
-	else   //if we are not sending samples right now
-	{
-		//if we are not sending samples just use buffer X
-		//fill it with data and trigger sending flag
-		writingHeadX = 0;
-		weUseBufferX = 0;//this means that buffer X is ready for sending the data
 
-		for(i=0;i<length;i++)
+		//if we are not sending data than add zeros up to one full frame = 62
+		if(sampleData==0)
 		{
-			bufferX[writingHeadX++] = responseBufferWithEscape[i];
-			if(writingHeadX>=MEGA_DATA_LENGTH)
+			for(i=length;i<62;i++)
 			{
-				break;
+				circularBuffer[head++] = 0;
+				difference++;
+				if(head>=MEGA_DATA_LENGTH)
+				{
+					head = 0;
+				}
 			}
+			difference = 62;
 		}
-		//always trigger sending flag
-		weHaveDataToSend = 1;
-	}
 }
 
 
@@ -647,7 +591,7 @@ void __attribute__ ((interrupt(TIMER0_A0_VECTOR))) TIMER0_A0_ISR (void)
 {
 	//P4OUT ^= BIT1;
 
-
+	P4OUT ^= RELAY_OUTPUT;
 	ADC12CTL0 |= ADC12ENC + ADC12SC;
     //__bic_SR_register_on_exit(LPM3_bits);   // Exit LPM
 }
@@ -698,8 +642,8 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 #endif
 {
 
-	//P4OUT ^= RED_LED;
-	//P4OUT ^= RED_LED;
+	P4OUT |= RED_LED;
+	//
 	// ------------------- BOARD DETECTION -----------------------------
 
 	currentEncoderVoltage = ADC12MEM4;
@@ -950,92 +894,72 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 
 	if(sampleData == 1)
 	{
-		if(weUseBufferX==1)
-		{
-			tempIndex = writingHeadX;//remember position of begining of frame to put flag bit
+
+			tempIndex = head;//remember position of begining of frame to put flag bit
 			tempADCresult = ADC12MEM0;
 
 
-			bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
-			bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
-
-			tempADCresult = ADC12MEM1;
-			bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
-			bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
-			if(writingHeadX>=MEGA_DATA_LENGTH)
+			circularBuffer[head++] = (0x7u & (tempADCresult>>7));
+			difference++;
+			if(head==MEGA_DATA_LENGTH)
 			{
-				writingHeadY = 0;
-				weUseBufferX = 0;
-				weHaveDataToSend = 1;
+				head = 0;
+			}
+			circularBuffer[head++] = (0x7Fu & tempADCresult);
+			difference++;
+			if(head==MEGA_DATA_LENGTH)
+			{
+				head = 0;
+			}
+			tempADCresult = ADC12MEM1;
+			circularBuffer[head++] = (0x7u & (tempADCresult>>7));
+			difference++;
+			if(head==MEGA_DATA_LENGTH)
+			{
+				head = 0;
+			}
+			circularBuffer[head++] = (0x7Fu & tempADCresult);
+			difference++;
+			if(head==MEGA_DATA_LENGTH)
+			{
+				head = 0;
 			}
 
 			if(numberOfChannels>2)
 			{
 				tempADCresult = ADC12MEM2;
-				bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
-				bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
+				circularBuffer[head++] = (0x7u & (tempADCresult>>7));
+				difference++;
+				if(head==MEGA_DATA_LENGTH)
+				{
+					head = 0;
+				}
+				circularBuffer[head++] = (0x7Fu & tempADCresult);
+				difference++;
+				if(head==MEGA_DATA_LENGTH)
+				{
+					head = 0;
+				}
 
 				tempADCresult = ADC12MEM3;
-				bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
-				bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
-				if(writingHeadX>=MEGA_DATA_LENGTH)
+				circularBuffer[head++] = (0x7u & (tempADCresult>>7));
+				difference++;
+				if(head==MEGA_DATA_LENGTH)
 				{
-					writingHeadY = 0;
-					weUseBufferX = 0;
-					weHaveDataToSend = 1;
+					head = 0;
+				}
+				circularBuffer[head++] = (0x7Fu & tempADCresult);
+				difference++;
+				if(head==MEGA_DATA_LENGTH)
+				{
+					head = 0;
 				}
 
 			}
 
-			bufferX[tempIndex] |= BIT7;//put flag for begining of frame
-
-		}
-		else
-		{
-
-			tempIndex = writingHeadY;//remember position of begining of frame to put flag bit
-
-			tempADCresult = ADC12MEM0;
+			circularBuffer[tempIndex] |= BIT7;//put flag for begining of frame
 
 
-			bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
-			bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
-
-
-
-			tempADCresult = ADC12MEM1;
-			bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
-			bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
-			if(writingHeadY>=MEGA_DATA_LENGTH)
-			{
-				writingHeadX = 0;
-				weUseBufferX = 1;
-				weHaveDataToSend = 1;
-
-			}
-
-			if(numberOfChannels>2)
-			{
-				tempADCresult = ADC12MEM2;
-				bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
-				bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
-
-
-				tempADCresult = ADC12MEM3;
-				bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
-				bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
-				if(writingHeadY>=MEGA_DATA_LENGTH)
-				{
-					writingHeadX = 0;
-					weUseBufferX = 1;
-					weHaveDataToSend = 1;
-
-				}
-			}
-
-			bufferY[tempIndex] |= BIT7;
-
-		}
 	}
 	else
 	{
@@ -1044,4 +968,5 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 	}
 //Uncomment this when not using repeat of sequence
 	ADC12CTL0 &= ~ADC12SC;
+	P4OUT &= ~RED_LED;
 }

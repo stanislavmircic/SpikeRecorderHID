@@ -37,7 +37,7 @@
 #define OPERATION_MODE_MORE_ANALOG 4
 
 #define TEN_K_SAMPLE_RATE 2500
-#define HALF_SAMPLE_RATE 3799
+#define HALF_SAMPLE_RATE 5000
 
 #define GREEN_LED BIT0
 #define RED_LED BIT1
@@ -609,7 +609,7 @@ void defaultSetupADC()
    // ADC configuration
    //ADC12SHT02 Sampling time 16 cycles,
    //ADC12ON  ADC12 on
-   ADC12CTL0 = ADC12SHT02 + ADC12ON +ADC12MSC;
+   ADC12CTL0 = ADC12SHT01 + ADC12ON +ADC12MSC;
 
    //ADC12CSTARTADD_0 start conversation address 0;
    //ADC12SHP - SAMPCON signal is sourced from the sampling timer.

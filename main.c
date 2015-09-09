@@ -134,8 +134,6 @@ void setupOperationMode(void);
 void main (void)
 {
 
-	  uint8_t y;
-
     // Set up clocks/IOs.  initPorts()/initClocks() will need to be customized
     // for your application, but MCLK should be between 4-25MHz.  Using the
     // DCO/FLL for MCLK is recommended, instead of the crystal.  For examples 
@@ -897,7 +895,7 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 
 			tempIndex = head;//remember position of begining of frame to put flag bit
 			tempADCresult = ADC12MEM0;
-
+			tempADCresult = difference;
 
 			circularBuffer[head++] = (0x7u & (tempADCresult>>7));
 			difference++;
@@ -912,6 +910,7 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 				head = 0;
 			}
 			tempADCresult = ADC12MEM1;
+			tempADCresult = difference;
 			circularBuffer[head++] = (0x7u & (tempADCresult>>7));
 			difference++;
 			if(head==MEGA_DATA_LENGTH)

@@ -651,7 +651,7 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 
 	//calculate offset correction
 	tempADCresult = ADC12MEM5;
-	//tempADCresult = 512;
+	tempADCresult = 512;
 	correctionVccOverTwo = tempADCresult-512;
 	tempCorrectionVariable = 1023+correctionVccOverTwo;
 

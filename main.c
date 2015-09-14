@@ -36,8 +36,8 @@
 #define OPERATION_MODE_ARDUINO_BOARD 3
 #define OPERATION_MODE_MORE_ANALOG 4
 
-#define TEN_K_SAMPLE_RATE 2500
-#define HALF_SAMPLE_RATE 5000
+#define TEN_K_SAMPLE_RATE 1600
+#define HALF_SAMPLE_RATE 3200
 
 #define GREEN_LED BIT0
 #define RED_LED BIT1
@@ -153,7 +153,7 @@ void main (void)
 #endif
     
        initPorts();            // Config GPIOS for low-power (output low)
-       initClocks(25000000);   // Config clocks. MCLK=SMCLK=FLL=8MHz; ACLK=REFO=32kHz
+       initClocks(16000000);   // Config clocks. MCLK=SMCLK=FLL=8MHz; ACLK=REFO=32kHz
        USB_setup(TRUE, TRUE);  // Init USB & events; if a host is present, connect
        operationMode = OPERATION_MODE_DEFAULT;
        defaultSetupADC();

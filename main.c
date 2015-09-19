@@ -167,7 +167,7 @@ void main (void)
        head = 0;
        tail = 0;
        difference = 0;
-
+       generalIndexVar = 0;
        //prepare state for USB
        bHIDDataSent_event = TRUE;
 
@@ -206,6 +206,7 @@ void main (void)
             	   if(bHIDDataReceived_event)
             	   {
 
+
             		   // Holds the new  string
 					   char receivedString[RECEIVE_BUFFER_LENGTH] = "";
 					   char * command1;
@@ -224,23 +225,40 @@ void main (void)
 					   executeCommand(command3);
 
             		   bHIDDataReceived_event = FALSE;
+
+            	   }
+
+            	   if(difference > generalIndexVar)
+            	   {
+            		   while(difference > generalIndexVar && generalIndexVar<62)
+            		   {
+						   tempSendBuffer[generalIndexVar] = circularBuffer[tail];
+						   generalIndexVar++;
+						   tail++;
+						   if(tail==MEGA_DATA_LENGTH)
+						   {
+							   tail = 0;
+						   }
+					   }
             	   }
 
             	   // ----------- sending
             	   if(difference >61 && bHIDDataSent_event)
             	   {
             		   bHIDDataSent_event = FALSE;
-            		   for(generalIndexVar =0;generalIndexVar<62;generalIndexVar++)
-            		   {
-            			   tempSendBuffer[generalIndexVar] = circularBuffer[tail];
-            			   tail++;
-            			   if(tail==MEGA_DATA_LENGTH)
-            			   {
-            				   tail = 0;
-            			   }
-            		   }
+            		   while(difference > generalIndexVar && generalIndexVar<62)
+					   {
+						   tempSendBuffer[generalIndexVar] = circularBuffer[tail];
+						   generalIndexVar++;
+						   tail++;
+						   if(tail==MEGA_DATA_LENGTH)
+						   {
+							   tail = 0;
+						   }
+					   }
+            		   generalIndexVar = 0;
             		   difference -=62;
-
+            		   //103usec
 					   if (hidSendDataInBackground((uint8_t*)tempSendBuffer,62,
 													   HID0_INTFNUM,0))
 					   {
@@ -248,7 +266,6 @@ void main (void)
 							   USBHID_abortSend(&w,HID0_INTFNUM);
 							   break;
 					   }
-
             	   }
 
                    break;
@@ -287,6 +304,8 @@ void main (void)
                case ST_ENUM_IN_PROGRESS:
                default:;
            }
+
+
        }  //while(1)
    } //main()
 
@@ -304,6 +323,7 @@ void setupOperationMode(void)
 			numberOfChannels = 2;
 			P6SEL = BIT0+BIT1+BIT7;//analog inputs
 			P6DIR = 0;//select all as inputs
+			P6REN = ~(BIT0+BIT1+BIT7);
 			P6OUT = 0;//put output register to zero
 			P4OUT |= RELAY_OUTPUT + GREEN_LED;
 			//default setup of ADC, redefines part of Port 6 pins
@@ -316,6 +336,7 @@ void setupOperationMode(void)
 			P6SEL = BIT0+BIT1+BIT7;//select analog inputs
 			//set all to inputs
 			P6DIR = 0;
+			P6REN = ~(BIT0+BIT1+BIT7);
 			P6OUT = 0;//put output register to zero
 
 			P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);
@@ -328,6 +349,8 @@ void setupOperationMode(void)
 			numberOfChannels = 4;
 			//make 4 analog inputs and additional for encoder
 			P6SEL = BIT0+BIT1+IO4+IO5 +BIT7;
+			P6REN = ~(BIT0+BIT1+IO4+IO5 +BIT7);
+			P6OUT = 0;//put output register to zero
 			P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);
 			P4OUT |=  GREEN_LED;
 
@@ -337,6 +360,7 @@ void setupOperationMode(void)
 			numberOfChannels = 2;
 			P6SEL = BIT0+BIT1+BIT7;//select all pins as digital I/O
 			P6DIR = 0;//select all as inputs
+			P6REN = ~(BIT0+BIT1+BIT7);
 			P6OUT = 0;//put output register to zero
 
 			P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);
@@ -348,6 +372,7 @@ void setupOperationMode(void)
 			numberOfChannels = 2;
 			P6SEL = BIT0+BIT1+BIT7;//select all pins as digital I/O
 			P6DIR = 0;//select all as inputs
+			P6REN = ~(BIT0+BIT1+BIT7);
 			P6OUT = 0;//put output register to zero
 
 			P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);

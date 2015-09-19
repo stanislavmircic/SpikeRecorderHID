@@ -51,7 +51,6 @@
 //p5.1 = A9 is used to correct Vcc/2 offset
 #define VCCTWO BIT1
 
-unsigned int debugEvent = 0;
 int correctionVccOverTwo = 0;
 unsigned int tempCorrectionVariable = 0;
 
@@ -859,7 +858,6 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 								{
 										eventEnabled1 = 0;
 										debounceTimer1 = DEBOUNCE_TIME;
-										debugEvent = 1;
 										sendStringWithEscapeSequence("EVNT:1;");
 								}
 						}

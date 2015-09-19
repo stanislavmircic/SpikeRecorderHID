@@ -1,10 +1,10 @@
 ******************************************************************************
                   MSP430 Linker Unix v4.4.3                    
 ******************************************************************************
->> Linked Sat Sep 19 09:24:37 2015
+>> Linked Sat Sep 19 09:37:16 2015
 
 OUTPUT FILE NAME:   <SpikeRecorderHID.out>
-ENTRY POINT SYMBOL: "_c_int00_noargs_noexit"  address: 0000a6ae
+ENTRY POINT SYMBOL: "_c_int00_noargs_noexit"  address: 0000a6aa
 
 
 MEMORY CONFIGURATION
@@ -19,8 +19,8 @@ MEMORY CONFIGURATION
   INFOB                 00001900   00000080  00000000  00000080  RWIX
   INFOA                 00001980   00000080  00000000  00000080  RWIX
   USBRAM                00001c00   00000800  00000000  00000800  RWIX
-  RAM                   00002400   00002000  0000098d  00001673  RWIX
-  FLASH                 00008000   00007f80  00002cba  000052c6  RWIX
+  RAM                   00002400   00002000  0000098b  00001675  RWIX
+  FLASH                 00008000   00007f80  00002cb6  000052ca  RWIX
   INT00                 0000ff80   00000002  00000000  00000002  RWIX
   INT01                 0000ff82   00000002  00000000  00000002  RWIX
   INT02                 0000ff84   00000002  00000000  00000002  RWIX
@@ -118,176 +118,176 @@ section   page    origin      length       input sections
                   00002ca8    00000001     (.common:bRemoteWakeup)
                   00002ca9    00000001     (.common:bStatusAction)
 
-.data      0    00002caa    00000043     UNINITIALIZED
-                  00002caa    00000038     main.obj (.data)
-                  00002ce2    00000006     usb.obj (.data)
-                  00002ce8    00000002     descriptors.obj (.data:report_desc)
-                  00002cea    00000002     rts430x_lc_sd_eabi.lib : strtok.obj (.data)
-                  00002cec    00000001     UsbHid.obj (.data:hidProtocol)
+.data      0    00002caa    00000041     UNINITIALIZED
+                  00002caa    00000036     main.obj (.data)
+                  00002ce0    00000006     usb.obj (.data)
+                  00002ce6    00000002     descriptors.obj (.data:report_desc)
+                  00002ce8    00000002     rts430x_lc_sd_eabi.lib : strtok.obj (.data)
+                  00002cea    00000001     UsbHid.obj (.data:hidProtocol)
 
 .stack     0    00004360    000000a0     UNINITIALIZED
                   00004360    00000002     rts430x_lc_sd_eabi.lib : boot.obj (.stack)
                   00004362    0000009e     --HOLE--
 
-.text      0    00008000    0000294a     
-                  00008000    00000418     main.obj (.text:_isr:ADC12ISR)
-                  00008418    000001e4     UsbHid.obj (.text:USBHID_receiveData)
-                  000085fc    000001dc     main.obj (.text:main)
-                  000087d8    0000019e     main.obj (.text:executeCommand)
-                  00008976    00000122     UsbHid.obj (.text:HidToBufferFromHost)
-                  00008a98    0000011e     UsbIsr.obj (.text:_isr:iUsbInterruptHandler)
-                  00008bb6    000000f6     main.obj (.text:sendStringWithEscapeSequence)
-                  00008cac    000000e8     UsbHid.obj (.text:HidToHostFromBuffer)
-                  00008d94    000000e6     usb.obj (.text:USB_reset)
-                  00008e7a    000000e2     ucs.obj (.text:UCS_initFLL)
-                  00008f5c    000000d6     rts430x_lc_sd_eabi.lib : copy_decompress_rle.obj (.text:__TI_decompress_rle_core)
-                  00009032    000000d2     usb.obj (.text:USB_enable)
-                  00009104    000000ce     pmm.obj (.text:PMM_setVCoreUp)
-                  000091d2    000000c0     UsbHid.obj (.text:USBHID_bytesInUSBBuffer)
-                  00009292    000000b0     usb.obj (.text:USB_InitSerialStringDescriptor)
-                  00009342    000000b0     main.obj (.text:setupOperationMode)
-                  000093f2    000000ae     usb.obj (.text:USB_determineFreq)
-                  000094a0    000000a4     UsbHid.obj (.text:USBHID_intfStatus)
-                  00009544    0000009c     hal.obj (.text:initPorts)
-                  000095e0    00000096     usb.obj (.text:USB_connectionState)
-                  00009676    00000094     pmm.obj (.text:PMM_setVCoreDown)
-                  0000970a    00000088     ucs.obj (.text:UCS_clockSignalInit)
-                  00009792    00000086     usb.obj (.text:usbDecodeAndProcessUsbRequest)
-                  00009818    00000084     usb.obj (.text:USB_init)
-                  0000989c    00000080     rts430x_lc_sd_eabi.lib : autoinit_wdt.obj (.text:_auto_init_hold_wdt)
-                  0000991c    00000070     usb.obj (.text:usbSendNextPacketOnIEP0)
-                  0000998c    0000006e     UsbHid.obj (.text:USBHID_sendData)
-                  000099fa    0000006a     UsbIsr.obj (.text:PWRVBUSoffHandler)
-                  00009a64    0000006a     usbConstructs.obj (.text:hidSendDataInBackground)
-                  00009ace    0000006a     usb.obj (.text:usbGetEndpointStatus)
-                  00009b38    00000060     UsbHid.obj (.text:HidCopyUsbToBuff)
-                  00009b98    0000005e     UsbIsr.obj (.text:PWRVBUSonHandler)
-                  00009bf6    0000005a     usbdma.obj (.text:memcpyDMA)
-                  00009c50    00000058     rts430x_lc_sd_eabi.lib : div32u.obj (.text)
-                  00009ca8    00000056     dma.obj (.text:DMA_initialize)
-                  00009cfe    00000052     usb.obj (.text:usbSetEndpointFeature)
-                  00009d50    0000004e     usb.obj (.text:usbGetStringDescriptor)
-                  00009d9e    0000004c     dma.obj (.text:DMA_init)
-                  00009dea    0000004a     pmm.obj (.text:PMM_setVCore)
-                  00009e34    0000004a     usb.obj (.text:USB_setup)
-                  00009e7e    0000004a     rts430x_lc_sd_eabi.lib : strtok.obj (.text:strtok)
-                  00009ec8    0000004a     usb.obj (.text:usbReceiveNextPacketOnOEP0)
-                  00009f12    00000048     UsbIsr.obj (.text:SetupPacketInterruptHandler)
-                  00009f5a    00000048     tlv.obj (.text:TLV_getInfo)
-                  00009fa2    00000048     usbConstructs.obj (.text:hidReceiveDataInBuffer)
-                  00009fea    00000046     usb.obj (.text:usbClearEndpointFeature)
-                  0000a030    00000044     main.obj (.text:defaultSetupADC)
-                  0000a074    00000040     ucs.obj (.text:UCS_XT2StartWithTimeout)
-                  0000a0b4    00000040     usbdma.obj (.text:USB_initMemcpy)
-                  0000a0f4    00000040     rts430x_lc_sd_eabi.lib : cpy_util.obj (.text:__memcpy_far)
-                  0000a134    0000003e     main.obj (.text:_isr:UNMI_ISR)
-                  0000a172    0000003e     rts430x_lc_sd_eabi.lib : copy_zero_init.obj (.text:decompress:ZI:__TI_zero_init)
-                  0000a1b0    0000003e     hal.obj (.text:initClocks)
-                  0000a1ee    0000003e     rts430x_lc_sd_eabi.lib : lsr32.obj (.text:l_lsr_const)
-                  0000a22c    0000003c     UsbIsr.obj (.text:OEP0InterruptHandler)
-                  0000a268    0000003c     rts430x_lc_sd_eabi.lib : copy_decompress_none.obj (.text:decompress:none:__TI_decompress_none)
-                  0000a2a4    00000036     UsbHid.obj (.text:USBHID_abortSend)
-                  0000a2da    00000034     usb.obj (.text:usbSetAddress)
-                  0000a30e    00000032     ucs.obj (.text:UCS_initFLLSettle)
-                  0000a340    00000032     usb.obj (.text:USB_connectionInfo)
-                  0000a372    00000030     usb.obj (.text:USB_suspend)
-                  0000a3a2    00000030     usb.obj (.text:usbSetConfiguration)
-                  0000a3d2    0000002a     usb.obj (.text:usbGetDeviceStatus)
-                  0000a3fc    0000002a     UsbHidReq.obj (.text:usbSetReport)
-                  0000a426    00000028     rts430x_lc_sd_eabi.lib : strcspn.obj (.text:strcspn)
-                  0000a44e    00000028                            : strspn.obj (.text:strspn)
-                  0000a476    00000026     dma.obj (.text:DMA_setDstAddress)
-                  0000a49c    00000026     UsbHidReq.obj (.text:usbGetReport)
-                  0000a4c2    00000024     dma.obj (.text:DMA_setSrcAddress)
-                  0000a4e6    00000024     usb.obj (.text:usbClearDeviceFeature)
-                  0000a50a    00000024     usb.obj (.text:usbSetDeviceFeature)
-                  0000a52e    00000022     usb.obj (.text:USB_disable)
-                  0000a550    00000022     usb.obj (.text:USB_disconnect)
-                  0000a572    00000020     UsbHid.obj (.text:HidResetData)
-                  0000a592    00000020     usb.obj (.text:usbSendDataPacketOnEP0)
-                  0000a5b2    0000001e     UsbHidReq.obj (.text:usbGetHidDescriptor)
-                  0000a5d0    0000001e     usb.obj (.text:usbGetInterface)
-                  0000a5ee    0000001e     usb.obj (.text:usbGetInterfaceStatus)
-                  0000a60c    0000001c     UsbIsr.obj (.text:IEP0InterruptHandler)
-                  0000a628    0000001c     usb.obj (.text:usbDisableInEndpointInterrupt)
-                  0000a644    0000001c     usb.obj (.text:usbDisableOutEndpointInterrupt)
-                  0000a660    0000001a     gpio.obj (.text:GPIO_setAsOutputPin)
-                  0000a67a    0000001a     gpio.obj (.text:GPIO_setAsPeripheralModuleFunctionOutputPin)
-                  0000a694    0000001a     usb.obj (.text:USB_connect)
-                  0000a6ae    0000001a     rts430x_lc_sd_eabi.lib : boot_special.obj (.text:_isr:_c_int00_noargs_noexit)
-                  0000a6c8    0000001a     usbdma.obj (.text:memcpyV)
-                  0000a6e2    0000001a     rts430x_lc_sd_eabi.lib : strcat.obj (.text:strcat)
-                  0000a6fc    0000001a     usb.obj (.text:usbSetInterface)
-                  0000a716    00000018     usb.obj (.text:USB_resume)
-                  0000a72e    00000018     wdt_a.obj (.text:WDT_A_hold)
-                  0000a746    00000018     rts430x_lc_sd_eabi.lib : strcmp.obj (.text:strcmp)
-                  0000a75e    00000018     UsbHidReq.obj (.text:usbGetReportDescriptor)
-                  0000a776    00000016     gpio.obj (.text:GPIO_setOutputLowOnPin)
-                  0000a78c    00000016     rts430x_lc_sd_eabi.lib : div16u.obj (.text)
-                  0000a7a2    00000016                            : mult16_f5hw.obj (.text)
-                  0000a7b8    00000016     usb.obj (.text:usbGetConfigurationDescriptor)
-                  0000a7ce    00000016     usb.obj (.text:usbGetDeviceDescriptor)
-                  0000a7e4    00000014     usbEventHandling.obj (.text:USB_handleVbusOnEvent)
-                  0000a7f8    00000014     rts430x_lc_sd_eabi.lib : memset.obj (.text:memset)
-                  0000a80c    00000014     usb.obj (.text:usbGetConfiguration)
-                  0000a820    00000014     usb.obj (.text:usbReceiveDataPacketOnEP0)
-                  0000a834    00000012     UsbHid.obj (.text:HidIsReceiveInProgress)
-                  0000a846    00000012     rts430x_lc_sd_eabi.lib : memcpy.obj (.text:memcpy)
-                  0000a858    00000012     usb.obj (.text:usbInvalidRequest)
-                  0000a86a    0000000e     rts430x_lc_sd_eabi.lib : copy_decompress_rle.obj (.text:decompress:rle24:__TI_decompress_rle24)
-                  0000a878    0000000c     dma.obj (.text:DMA_getInterruptStatus)
-                  0000a884    0000000c     usbEventHandling.obj (.text:USB_handleClockEvent)
-                  0000a890    0000000a     dma.obj (.text:DMA_disableTransfers)
-                  0000a89a    0000000a     dma.obj (.text:DMA_enableTransfers)
-                  0000a8a4    0000000a     rts430x_lc_sd_eabi.lib : lsl16.obj (.text)
-                  0000a8ae    0000000a                            : lsr16.obj (.text)
-                  0000a8b8    00000008     dma.obj (.text:DMA_setTransferSize)
-                  0000a8c0    00000008     dma.obj (.text:DMA_startTransfer)
-                  0000a8c8    00000008     ucs.obj (.text:UCS_XT2Off)
-                  0000a8d0    00000008     usbEventHandling.obj (.text:USBHID_handleDataReceived)
-                  0000a8d8    00000008     usbEventHandling.obj (.text:USBHID_handleSendCompleted)
-                  0000a8e0    00000008     main.obj (.text:_isr:TIMER0_A0_ISR)
-                  0000a8e8    00000006     dma.obj (.text:DMA_disableTransferDuringReadModifyWrite)
-                  0000a8ee    00000006     dma.obj (.text:DMA_enableTransferDuringReadModifyWrite)
-                  0000a8f4    00000006     sfr.obj (.text:SFR_clearInterrupt)
-                  0000a8fa    00000006     ucs.obj (.text:UCS_clearFaultFlag)
-                  0000a900    00000006     usb.obj (.text:USB_getVersion)
-                  0000a906    00000006     rts430x_lc_sd_eabi.lib : isr_trap.obj (.text:_isr:__TI_ISR_TRAP)
-                  0000a90c    00000006     usb.obj (.text:usbClearOEP0ByteCount)
-                  0000a912    00000006     usb.obj (.text:usbRestoreInEndpointInterrupt)
-                  0000a918    00000006     usb.obj (.text:usbRestoreOutEndpointInterrupt)
-                  0000a91e    00000004     usbEventHandling.obj (.text:USBHID_handleEP0GetReport)
-                  0000a922    00000004     usbEventHandling.obj (.text:USBHID_handleEP0SetReport)
-                  0000a926    00000004     usbEventHandling.obj (.text:USBHID_handleEP0SetReportDataAvailable)
-                  0000a92a    00000004     usbEventHandling.obj (.text:USBHID_handleReceiveCompleted)
-                  0000a92e    00000004     usbEventHandling.obj (.text:USB_handleEnumCompleteEvent)
-                  0000a932    00000004     usbEventHandling.obj (.text:USB_handleResetEvent)
-                  0000a936    00000004     usbEventHandling.obj (.text:USB_handleResumeEvent)
-                  0000a93a    00000004     usbEventHandling.obj (.text:USB_handleSuspendEvent)
-                  0000a93e    00000004     usbEventHandling.obj (.text:USB_handleVbusOffEvent)
-                  0000a942    00000004     rts430x_lc_sd_eabi.lib : pre_init.obj (.text:_system_pre_init)
-                  0000a946    00000004                            : exit.obj (.text:abort)
+.text      0    00008000    00002946     
+                  00008000    00000414     main.obj (.text:_isr:ADC12ISR)
+                  00008414    000001e4     UsbHid.obj (.text:USBHID_receiveData)
+                  000085f8    000001dc     main.obj (.text:main)
+                  000087d4    0000019e     main.obj (.text:executeCommand)
+                  00008972    00000122     UsbHid.obj (.text:HidToBufferFromHost)
+                  00008a94    0000011e     UsbIsr.obj (.text:_isr:iUsbInterruptHandler)
+                  00008bb2    000000f6     main.obj (.text:sendStringWithEscapeSequence)
+                  00008ca8    000000e8     UsbHid.obj (.text:HidToHostFromBuffer)
+                  00008d90    000000e6     usb.obj (.text:USB_reset)
+                  00008e76    000000e2     ucs.obj (.text:UCS_initFLL)
+                  00008f58    000000d6     rts430x_lc_sd_eabi.lib : copy_decompress_rle.obj (.text:__TI_decompress_rle_core)
+                  0000902e    000000d2     usb.obj (.text:USB_enable)
+                  00009100    000000ce     pmm.obj (.text:PMM_setVCoreUp)
+                  000091ce    000000c0     UsbHid.obj (.text:USBHID_bytesInUSBBuffer)
+                  0000928e    000000b0     usb.obj (.text:USB_InitSerialStringDescriptor)
+                  0000933e    000000b0     main.obj (.text:setupOperationMode)
+                  000093ee    000000ae     usb.obj (.text:USB_determineFreq)
+                  0000949c    000000a4     UsbHid.obj (.text:USBHID_intfStatus)
+                  00009540    0000009c     hal.obj (.text:initPorts)
+                  000095dc    00000096     usb.obj (.text:USB_connectionState)
+                  00009672    00000094     pmm.obj (.text:PMM_setVCoreDown)
+                  00009706    00000088     ucs.obj (.text:UCS_clockSignalInit)
+                  0000978e    00000086     usb.obj (.text:usbDecodeAndProcessUsbRequest)
+                  00009814    00000084     usb.obj (.text:USB_init)
+                  00009898    00000080     rts430x_lc_sd_eabi.lib : autoinit_wdt.obj (.text:_auto_init_hold_wdt)
+                  00009918    00000070     usb.obj (.text:usbSendNextPacketOnIEP0)
+                  00009988    0000006e     UsbHid.obj (.text:USBHID_sendData)
+                  000099f6    0000006a     UsbIsr.obj (.text:PWRVBUSoffHandler)
+                  00009a60    0000006a     usbConstructs.obj (.text:hidSendDataInBackground)
+                  00009aca    0000006a     usb.obj (.text:usbGetEndpointStatus)
+                  00009b34    00000060     UsbHid.obj (.text:HidCopyUsbToBuff)
+                  00009b94    0000005e     UsbIsr.obj (.text:PWRVBUSonHandler)
+                  00009bf2    0000005a     usbdma.obj (.text:memcpyDMA)
+                  00009c4c    00000058     rts430x_lc_sd_eabi.lib : div32u.obj (.text)
+                  00009ca4    00000056     dma.obj (.text:DMA_initialize)
+                  00009cfa    00000052     usb.obj (.text:usbSetEndpointFeature)
+                  00009d4c    0000004e     usb.obj (.text:usbGetStringDescriptor)
+                  00009d9a    0000004c     dma.obj (.text:DMA_init)
+                  00009de6    0000004a     pmm.obj (.text:PMM_setVCore)
+                  00009e30    0000004a     usb.obj (.text:USB_setup)
+                  00009e7a    0000004a     rts430x_lc_sd_eabi.lib : strtok.obj (.text:strtok)
+                  00009ec4    0000004a     usb.obj (.text:usbReceiveNextPacketOnOEP0)
+                  00009f0e    00000048     UsbIsr.obj (.text:SetupPacketInterruptHandler)
+                  00009f56    00000048     tlv.obj (.text:TLV_getInfo)
+                  00009f9e    00000048     usbConstructs.obj (.text:hidReceiveDataInBuffer)
+                  00009fe6    00000046     usb.obj (.text:usbClearEndpointFeature)
+                  0000a02c    00000044     main.obj (.text:defaultSetupADC)
+                  0000a070    00000040     ucs.obj (.text:UCS_XT2StartWithTimeout)
+                  0000a0b0    00000040     usbdma.obj (.text:USB_initMemcpy)
+                  0000a0f0    00000040     rts430x_lc_sd_eabi.lib : cpy_util.obj (.text:__memcpy_far)
+                  0000a130    0000003e     main.obj (.text:_isr:UNMI_ISR)
+                  0000a16e    0000003e     rts430x_lc_sd_eabi.lib : copy_zero_init.obj (.text:decompress:ZI:__TI_zero_init)
+                  0000a1ac    0000003e     hal.obj (.text:initClocks)
+                  0000a1ea    0000003e     rts430x_lc_sd_eabi.lib : lsr32.obj (.text:l_lsr_const)
+                  0000a228    0000003c     UsbIsr.obj (.text:OEP0InterruptHandler)
+                  0000a264    0000003c     rts430x_lc_sd_eabi.lib : copy_decompress_none.obj (.text:decompress:none:__TI_decompress_none)
+                  0000a2a0    00000036     UsbHid.obj (.text:USBHID_abortSend)
+                  0000a2d6    00000034     usb.obj (.text:usbSetAddress)
+                  0000a30a    00000032     ucs.obj (.text:UCS_initFLLSettle)
+                  0000a33c    00000032     usb.obj (.text:USB_connectionInfo)
+                  0000a36e    00000030     usb.obj (.text:USB_suspend)
+                  0000a39e    00000030     usb.obj (.text:usbSetConfiguration)
+                  0000a3ce    0000002a     usb.obj (.text:usbGetDeviceStatus)
+                  0000a3f8    0000002a     UsbHidReq.obj (.text:usbSetReport)
+                  0000a422    00000028     rts430x_lc_sd_eabi.lib : strcspn.obj (.text:strcspn)
+                  0000a44a    00000028                            : strspn.obj (.text:strspn)
+                  0000a472    00000026     dma.obj (.text:DMA_setDstAddress)
+                  0000a498    00000026     UsbHidReq.obj (.text:usbGetReport)
+                  0000a4be    00000024     dma.obj (.text:DMA_setSrcAddress)
+                  0000a4e2    00000024     usb.obj (.text:usbClearDeviceFeature)
+                  0000a506    00000024     usb.obj (.text:usbSetDeviceFeature)
+                  0000a52a    00000022     usb.obj (.text:USB_disable)
+                  0000a54c    00000022     usb.obj (.text:USB_disconnect)
+                  0000a56e    00000020     UsbHid.obj (.text:HidResetData)
+                  0000a58e    00000020     usb.obj (.text:usbSendDataPacketOnEP0)
+                  0000a5ae    0000001e     UsbHidReq.obj (.text:usbGetHidDescriptor)
+                  0000a5cc    0000001e     usb.obj (.text:usbGetInterface)
+                  0000a5ea    0000001e     usb.obj (.text:usbGetInterfaceStatus)
+                  0000a608    0000001c     UsbIsr.obj (.text:IEP0InterruptHandler)
+                  0000a624    0000001c     usb.obj (.text:usbDisableInEndpointInterrupt)
+                  0000a640    0000001c     usb.obj (.text:usbDisableOutEndpointInterrupt)
+                  0000a65c    0000001a     gpio.obj (.text:GPIO_setAsOutputPin)
+                  0000a676    0000001a     gpio.obj (.text:GPIO_setAsPeripheralModuleFunctionOutputPin)
+                  0000a690    0000001a     usb.obj (.text:USB_connect)
+                  0000a6aa    0000001a     rts430x_lc_sd_eabi.lib : boot_special.obj (.text:_isr:_c_int00_noargs_noexit)
+                  0000a6c4    0000001a     usbdma.obj (.text:memcpyV)
+                  0000a6de    0000001a     rts430x_lc_sd_eabi.lib : strcat.obj (.text:strcat)
+                  0000a6f8    0000001a     usb.obj (.text:usbSetInterface)
+                  0000a712    00000018     usb.obj (.text:USB_resume)
+                  0000a72a    00000018     wdt_a.obj (.text:WDT_A_hold)
+                  0000a742    00000018     rts430x_lc_sd_eabi.lib : strcmp.obj (.text:strcmp)
+                  0000a75a    00000018     UsbHidReq.obj (.text:usbGetReportDescriptor)
+                  0000a772    00000016     gpio.obj (.text:GPIO_setOutputLowOnPin)
+                  0000a788    00000016     rts430x_lc_sd_eabi.lib : div16u.obj (.text)
+                  0000a79e    00000016                            : mult16_f5hw.obj (.text)
+                  0000a7b4    00000016     usb.obj (.text:usbGetConfigurationDescriptor)
+                  0000a7ca    00000016     usb.obj (.text:usbGetDeviceDescriptor)
+                  0000a7e0    00000014     usbEventHandling.obj (.text:USB_handleVbusOnEvent)
+                  0000a7f4    00000014     rts430x_lc_sd_eabi.lib : memset.obj (.text:memset)
+                  0000a808    00000014     usb.obj (.text:usbGetConfiguration)
+                  0000a81c    00000014     usb.obj (.text:usbReceiveDataPacketOnEP0)
+                  0000a830    00000012     UsbHid.obj (.text:HidIsReceiveInProgress)
+                  0000a842    00000012     rts430x_lc_sd_eabi.lib : memcpy.obj (.text:memcpy)
+                  0000a854    00000012     usb.obj (.text:usbInvalidRequest)
+                  0000a866    0000000e     rts430x_lc_sd_eabi.lib : copy_decompress_rle.obj (.text:decompress:rle24:__TI_decompress_rle24)
+                  0000a874    0000000c     dma.obj (.text:DMA_getInterruptStatus)
+                  0000a880    0000000c     usbEventHandling.obj (.text:USB_handleClockEvent)
+                  0000a88c    0000000a     dma.obj (.text:DMA_disableTransfers)
+                  0000a896    0000000a     dma.obj (.text:DMA_enableTransfers)
+                  0000a8a0    0000000a     rts430x_lc_sd_eabi.lib : lsl16.obj (.text)
+                  0000a8aa    0000000a                            : lsr16.obj (.text)
+                  0000a8b4    00000008     dma.obj (.text:DMA_setTransferSize)
+                  0000a8bc    00000008     dma.obj (.text:DMA_startTransfer)
+                  0000a8c4    00000008     ucs.obj (.text:UCS_XT2Off)
+                  0000a8cc    00000008     usbEventHandling.obj (.text:USBHID_handleDataReceived)
+                  0000a8d4    00000008     usbEventHandling.obj (.text:USBHID_handleSendCompleted)
+                  0000a8dc    00000008     main.obj (.text:_isr:TIMER0_A0_ISR)
+                  0000a8e4    00000006     dma.obj (.text:DMA_disableTransferDuringReadModifyWrite)
+                  0000a8ea    00000006     dma.obj (.text:DMA_enableTransferDuringReadModifyWrite)
+                  0000a8f0    00000006     sfr.obj (.text:SFR_clearInterrupt)
+                  0000a8f6    00000006     ucs.obj (.text:UCS_clearFaultFlag)
+                  0000a8fc    00000006     usb.obj (.text:USB_getVersion)
+                  0000a902    00000006     rts430x_lc_sd_eabi.lib : isr_trap.obj (.text:_isr:__TI_ISR_TRAP)
+                  0000a908    00000006     usb.obj (.text:usbClearOEP0ByteCount)
+                  0000a90e    00000006     usb.obj (.text:usbRestoreInEndpointInterrupt)
+                  0000a914    00000006     usb.obj (.text:usbRestoreOutEndpointInterrupt)
+                  0000a91a    00000004     usbEventHandling.obj (.text:USBHID_handleEP0GetReport)
+                  0000a91e    00000004     usbEventHandling.obj (.text:USBHID_handleEP0SetReport)
+                  0000a922    00000004     usbEventHandling.obj (.text:USBHID_handleEP0SetReportDataAvailable)
+                  0000a926    00000004     usbEventHandling.obj (.text:USBHID_handleReceiveCompleted)
+                  0000a92a    00000004     usbEventHandling.obj (.text:USB_handleEnumCompleteEvent)
+                  0000a92e    00000004     usbEventHandling.obj (.text:USB_handleResetEvent)
+                  0000a932    00000004     usbEventHandling.obj (.text:USB_handleResumeEvent)
+                  0000a936    00000004     usbEventHandling.obj (.text:USB_handleSuspendEvent)
+                  0000a93a    00000004     usbEventHandling.obj (.text:USB_handleVbusOffEvent)
+                  0000a93e    00000004     rts430x_lc_sd_eabi.lib : pre_init.obj (.text:_system_pre_init)
+                  0000a942    00000004                            : exit.obj (.text:abort)
 
-.const     0    0000a94a    00000326     
-                  0000a94a    00000118     descriptors.obj (.const:tUsbRequestList)
-                  0000aa62    000000b6     main.obj (.const:.string)
-                  0000ab18    000000a0     descriptors.obj (.const:.string:abromStringDescriptor)
-                  0000abb8    00000029     descriptors.obj (.const)
-                  0000abe1    00000001     --HOLE-- [fill = 0]
-                  0000abe2    00000024     descriptors.obj (.const:.string:report_desc_HID0)
-                  0000ac06    00000020     usb.obj (.const:.string)
-                  0000ac26    0000001c     gpio.obj (.const:GPIO_PORT_TO_BASE)
-                  0000ac42    00000012     descriptors.obj (.const:.string:abromDeviceDescriptor)
-                  0000ac54    00000010     descriptors.obj (.const:stUsbHandle)
-                  0000ac64    0000000a     dma.obj (.const)
-                  0000ac6e    00000002     descriptors.obj (.const:report_desc_size)
+.const     0    0000a946    00000326     
+                  0000a946    00000118     descriptors.obj (.const:tUsbRequestList)
+                  0000aa5e    000000b6     main.obj (.const:.string)
+                  0000ab14    000000a0     descriptors.obj (.const:.string:abromStringDescriptor)
+                  0000abb4    00000029     descriptors.obj (.const)
+                  0000abdd    00000001     --HOLE-- [fill = 0]
+                  0000abde    00000024     descriptors.obj (.const:.string:report_desc_HID0)
+                  0000ac02    00000020     usb.obj (.const:.string)
+                  0000ac22    0000001c     gpio.obj (.const:GPIO_PORT_TO_BASE)
+                  0000ac3e    00000012     descriptors.obj (.const:.string:abromDeviceDescriptor)
+                  0000ac50    00000010     descriptors.obj (.const:stUsbHandle)
+                  0000ac60    0000000a     dma.obj (.const)
+                  0000ac6a    00000002     descriptors.obj (.const:report_desc_size)
 
-.cinit     0    0000ac70    0000004a     
-                  0000ac70    00000027     (.cinit..data.load) [load image, compression = rle]
-                  0000ac97    00000001     --HOLE-- [fill = 0]
-                  0000ac98    0000000c     (__TI_handler_table)
-                  0000aca4    00000006     (.cinit..bss.load) [load image, compression = zero_init]
-                  0000acaa    00000010     (__TI_cinit_table)
+.cinit     0    0000ac6c    0000004a     
+                  0000ac6c    00000027     (.cinit..data.load) [load image, compression = rle]
+                  0000ac93    00000001     --HOLE-- [fill = 0]
+                  0000ac94    0000000c     (__TI_handler_table)
+                  0000aca0    00000006     (.cinit..bss.load) [load image, compression = zero_init]
+                  0000aca6    00000010     (__TI_cinit_table)
 
 .init_array 
 *          0    00008000    00000000     UNINITIALIZED
@@ -378,14 +378,14 @@ SYSNMI     0    0000fffc    00000002
 
 LINKER GENERATED COPY TABLES
 
-__TI_cinit_table @ 0000acaa records: 2, size/record: 8, table size: 16
-	.data: load addr=0000ac70, load size=00000027 bytes, run addr=00002caa, run size=00000043 bytes, compression=rle
-	.bss: load addr=0000aca4, load size=00000006 bytes, run addr=00002400, run size=000008aa bytes, compression=zero_init
+__TI_cinit_table @ 0000aca6 records: 2, size/record: 8, table size: 16
+	.data: load addr=0000ac6c, load size=00000027 bytes, run addr=00002caa, run size=00000041 bytes, compression=rle
+	.bss: load addr=0000aca0, load size=00000006 bytes, run addr=00002400, run size=000008aa bytes, compression=zero_init
 
 
 LINKER GENERATED HANDLER TABLE
 
-__TI_handler_table @ 0000ac98 records: 3, size/record: 4, table size: 12
+__TI_handler_table @ 0000ac94 records: 3, size/record: 4, table size: 12
 	index: 0, handler: __TI_zero_init
 	index: 1, handler: __TI_decompress_rle24
 	index: 2, handler: __TI_decompress_none
@@ -478,7 +478,7 @@ address   name
 00000732  ADC12MEM9                                  
 00000733  ADC12MEM9_H                                
 00000732  ADC12MEM9_L                                
-0000a946  C$$EXIT                                    
+0000a942  C$$EXIT                                    
 000008c0  CBCTL0                                     
 000008c1  CBCTL0_H                                   
 000008c0  CBCTL0_L                                   
@@ -555,17 +555,17 @@ address   name
 0000050e  DMAIV                                      
 0000050f  DMAIV_H                                    
 0000050e  DMAIV_L                                    
-0000a8e8  DMA_disableTransferDuringReadModifyWrite   
-0000a890  DMA_disableTransfers                       
-0000a8ee  DMA_enableTransferDuringReadModifyWrite    
-0000a89a  DMA_enableTransfers                        
-0000a878  DMA_getInterruptStatus                     
-00009d9e  DMA_init                                   
-00009ca8  DMA_initialize                             
-0000a476  DMA_setDstAddress                          
-0000a4c2  DMA_setSrcAddress                          
-0000a8b8  DMA_setTransferSize                        
-0000a8c0  DMA_startTransfer                          
+0000a8e4  DMA_disableTransferDuringReadModifyWrite   
+0000a88c  DMA_disableTransfers                       
+0000a8ea  DMA_enableTransferDuringReadModifyWrite    
+0000a896  DMA_enableTransfers                        
+0000a874  DMA_getInterruptStatus                     
+00009d9a  DMA_init                                   
+00009ca4  DMA_initialize                             
+0000a472  DMA_setDstAddress                          
+0000a4be  DMA_setSrcAddress                          
+0000a8b4  DMA_setTransferSize                        
+0000a8bc  DMA_startTransfer                          
 00000140  FCTL1                                      
 00000141  FCTL1_H                                    
 00000140  FCTL1_L                                    
@@ -575,15 +575,15 @@ address   name
 00000146  FCTL4                                      
 00000147  FCTL4_H                                    
 00000146  FCTL4_L                                    
-0000a660  GPIO_setAsOutputPin                        
-0000a67a  GPIO_setAsPeripheralModuleFunctionOutputPin
-0000a776  GPIO_setOutputLowOnPin                     
-00009b38  HidCopyUsbToBuff                           
-0000a834  HidIsReceiveInProgress                     
-0000a572  HidResetData                               
-00008976  HidToBufferFromHost                        
-00008cac  HidToHostFromBuffer                        
-0000a60c  IEP0InterruptHandler                       
+0000a65c  GPIO_setAsOutputPin                        
+0000a676  GPIO_setAsPeripheralModuleFunctionOutputPin
+0000a772  GPIO_setOutputLowOnPin                     
+00009b34  HidCopyUsbToBuff                           
+0000a830  HidIsReceiveInProgress                     
+0000a56e  HidResetData                               
+00008972  HidToBufferFromHost                        
+00008ca8  HidToHostFromBuffer                        
+0000a608  IEP0InterruptHandler                       
 000004c4  MAC                                        
 000004da  MAC32H                                     
 000004db  MAC32H_H                                   
@@ -623,7 +623,7 @@ address   name
 000004c2  MPYS_L                                     
 000004c1  MPY_H                                      
 000004c0  MPY_L                                      
-0000a22c  OEP0InterruptHandler                       
+0000a228  OEP0InterruptHandler                       
 000004c8  OP2                                        
 000004e2  OP2H                                       
 000004e3  OP2H_H                                     
@@ -746,11 +746,11 @@ address   name
 0000012e  PMMRIE                                     
 0000012f  PMMRIE_H                                   
 0000012e  PMMRIE_L                                   
-00009dea  PMM_setVCore                               
-00009676  PMM_setVCoreDown                           
-00009104  PMM_setVCoreUp                             
-000099fa  PWRVBUSoffHandler                          
-00009b98  PWRVBUSonHandler                           
+00009de6  PMM_setVCore                               
+00009672  PMM_setVCoreDown                           
+00009100  PMM_setVCoreUp                             
+000099f6  PWRVBUSoffHandler                          
+00009b94  PWRVBUSonHandler                           
 00000158  RCCTL0                                     
 00000159  RCCTL0_H                                   
 00000158  RCCTL0_L                                   
@@ -818,7 +818,7 @@ address   name
 00000104  SFRRPCR                                    
 00000105  SFRRPCR_H                                  
 00000104  SFRRPCR_L                                  
-0000a8f4  SFR_clearInterrupt                         
+0000a8f0  SFR_clearInterrupt                         
 000004ce  SUMEXT                                     
 000004cf  SUMEXT_H                                   
 000004ce  SUMEXT_L                                   
@@ -864,7 +864,7 @@ address   name
 0000019a  SYSUNIV                                    
 0000019b  SYSUNIV_H                                  
 0000019a  SYSUNIV_L                                  
-00009f12  SetupPacketInterruptHandler                
+00009f0e  SetupPacketInterruptHandler                
 00000352  TA0CCR0                                    
 00000354  TA0CCR1                                    
 00000356  TA0CCR2                                    
@@ -917,8 +917,8 @@ address   name
 000003e0  TB0EX0                                     
 000003ee  TB0IV                                      
 000003d0  TB0R                                       
-0000a8e0  TIMER0_A0_ISR                              
-00009f5a  TLV_getInfo                                
+0000a8dc  TIMER0_A0_ISR                              
+00009f56  TLV_getInfo                                
 000005d0  UCA0ABCTL                                  
 000005c6  UCA0BRW                                    
 000005c7  UCA0BRW_H                                  
@@ -1020,13 +1020,13 @@ address   name
 00000170  UCSCTL8                                    
 00000171  UCSCTL8_H                                  
 00000170  UCSCTL8_L                                  
-0000a8c8  UCS_XT2Off                                 
-0000a074  UCS_XT2StartWithTimeout                    
-0000a8fa  UCS_clearFaultFlag                         
-0000970a  UCS_clockSignalInit                        
-00008e7a  UCS_initFLL                                
-0000a30e  UCS_initFLLSettle                          
-0000a134  UNMI_ISR                                   
+0000a8c4  UCS_XT2Off                                 
+0000a070  UCS_XT2StartWithTimeout                    
+0000a8f6  UCS_clearFaultFlag                         
+00009706  UCS_clockSignalInit                        
+00008e76  UCS_initFLL                                
+0000a30a  UCS_initFLLSettle                          
+0000a130  UNMI_ISR                                   
 00000902  USBCNF                                     
 00000903  USBCNF_H                                   
 00000902  USBCNF_L                                   
@@ -1035,17 +1035,17 @@ address   name
 0000093b  USBFN_H                                    
 0000093a  USBFN_L                                    
 0000093f  USBFUNADR                                  
-0000a2a4  USBHID_abortSend                           
-000091d2  USBHID_bytesInUSBBuffer                    
-0000a8d0  USBHID_handleDataReceived                  
-0000a91e  USBHID_handleEP0GetReport                  
-0000a922  USBHID_handleEP0SetReport                  
-0000a926  USBHID_handleEP0SetReportDataAvailable     
-0000a92a  USBHID_handleReceiveCompleted              
-0000a8d8  USBHID_handleSendCompleted                 
-000094a0  USBHID_intfStatus                          
-00008418  USBHID_receiveData                         
-0000998c  USBHID_sendData                            
+0000a2a0  USBHID_abortSend                           
+000091ce  USBHID_bytesInUSBBuffer                    
+0000a8cc  USBHID_handleDataReceived                  
+0000a91a  USBHID_handleEP0GetReport                  
+0000a91e  USBHID_handleEP0SetReport                  
+0000a922  USBHID_handleEP0SetReportDataAvailable     
+0000a926  USBHID_handleReceiveCompleted              
+0000a8d4  USBHID_handleSendCompleted                 
+0000949c  USBHID_intfStatus                          
+00008414  USBHID_receiveData                         
+00009988  USBHID_sendData                            
 0000093d  USBIE                                      
 00002378  USBIEP0BUF                                 
 000023c9  USBIEPBBAX_1                               
@@ -1172,46 +1172,46 @@ address   name
 00000932  USBVECINT                                  
 00000933  USBVECINT_H                                
 00000932  USBVECINT_L                                
-00009292  USB_InitSerialStringDescriptor             
+0000928e  USB_InitSerialStringDescriptor             
 00002c88  USB_RX_memcpy                              
 00002c8c  USB_TX_memcpy                              
-0000a694  USB_connect                                
-0000a340  USB_connectionInfo                         
-000095e0  USB_connectionState                        
-000093f2  USB_determineFreq                          
-0000a52e  USB_disable                                
-0000a550  USB_disconnect                             
-00009032  USB_enable                                 
-0000a900  USB_getVersion                             
-0000a884  USB_handleClockEvent                       
-0000a92e  USB_handleEnumCompleteEvent                
-0000a932  USB_handleResetEvent                       
-0000a936  USB_handleResumeEvent                      
-0000a93a  USB_handleSuspendEvent                     
-0000a93e  USB_handleVbusOffEvent                     
-0000a7e4  USB_handleVbusOnEvent                      
-00009818  USB_init                                   
-0000a0b4  USB_initMemcpy                             
-00008d94  USB_reset                                  
-0000a716  USB_resume                                 
-00009e34  USB_setup                                  
-0000a372  USB_suspend                                
-00002ce6  VERSION                                    
+0000a690  USB_connect                                
+0000a33c  USB_connectionInfo                         
+000095dc  USB_connectionState                        
+000093ee  USB_determineFreq                          
+0000a52a  USB_disable                                
+0000a54c  USB_disconnect                             
+0000902e  USB_enable                                 
+0000a8fc  USB_getVersion                             
+0000a880  USB_handleClockEvent                       
+0000a92a  USB_handleEnumCompleteEvent                
+0000a92e  USB_handleResetEvent                       
+0000a932  USB_handleResumeEvent                      
+0000a936  USB_handleSuspendEvent                     
+0000a93a  USB_handleVbusOffEvent                     
+0000a7e0  USB_handleVbusOnEvent                      
+00009814  USB_init                                   
+0000a0b0  USB_initMemcpy                             
+00008d90  USB_reset                                  
+0000a712  USB_resume                                 
+00009e30  USB_setup                                  
+0000a36e  USB_suspend                                
+00002ce4  VERSION                                    
 0000015c  WDTCTL                                     
 0000015d  WDTCTL_H                                   
 0000015c  WDTCTL_L                                   
-0000a72e  WDT_A_hold                                 
+0000a72a  WDT_A_hold                                 
 00004400  __STACK_END                                
 000000a0  __STACK_SIZE                               
-0000acaa  __TI_CINIT_Base                            
-0000acba  __TI_CINIT_Limit                           
-0000ac98  __TI_Handler_Table_Base                    
-0000aca4  __TI_Handler_Table_Limit                   
+0000aca6  __TI_CINIT_Base                            
+0000acb6  __TI_CINIT_Limit                           
+0000ac94  __TI_Handler_Table_Base                    
+0000aca0  __TI_Handler_Table_Limit                   
 UNDEFED   __TI_INITARRAY_Base                        
 UNDEFED   __TI_INITARRAY_Limit                       
-0000a906  __TI_ISR_TRAP                              
-0000a268  __TI_decompress_none                       
-0000a86a  __TI_decompress_rle24                      
+0000a902  __TI_ISR_TRAP                              
+0000a264  __TI_decompress_none                       
+0000a866  __TI_decompress_rle24                      
 0000ffd2  __TI_int41                                 
 0000ffd4  __TI_int42                                 
 0000ffd6  __TI_int43                                 
@@ -1234,91 +1234,90 @@ UNDEFED   __TI_INITARRAY_Limit
 0000fff8  __TI_int60                                 
 0000fffa  __TI_int61                                 
 0000fffc  __TI_int62                                 
-0000a172  __TI_zero_init                             
+0000a16e  __TI_zero_init                             
 ffffffff  __binit__                                  
 ffffffff  __c_args__                                 
-0000a0f4  __memcpy_far                               
-0000a78c  __mspabi_divu                              
-00009c50  __mspabi_divul                             
-0000a7a2  __mspabi_mpyi_f5hw                         
-0000a78c  __mspabi_remu                              
-00009c50  __mspabi_remul                             
-0000a8a4  __mspabi_slli                              
-0000a8ae  __mspabi_srli                              
-0000a226  __mspabi_srll_1                            
-0000a202  __mspabi_srll_10                           
-0000a1fe  __mspabi_srll_11                           
-0000a1fa  __mspabi_srll_12                           
-0000a1f6  __mspabi_srll_13                           
-0000a1f2  __mspabi_srll_14                           
-0000a1ee  __mspabi_srll_15                           
-0000a222  __mspabi_srll_2                            
-0000a21e  __mspabi_srll_3                            
-0000a21a  __mspabi_srll_4                            
-0000a216  __mspabi_srll_5                            
-0000a212  __mspabi_srll_6                            
-0000a20e  __mspabi_srll_7                            
-0000a20a  __mspabi_srll_8                            
-0000a206  __mspabi_srll_9                            
-0000989c  _auto_init_hold_wdt                        
-0000a6ae  _c_int00_noargs_noexit                     
+0000a0f0  __memcpy_far                               
+0000a788  __mspabi_divu                              
+00009c4c  __mspabi_divul                             
+0000a79e  __mspabi_mpyi_f5hw                         
+0000a788  __mspabi_remu                              
+00009c4c  __mspabi_remul                             
+0000a8a0  __mspabi_slli                              
+0000a8aa  __mspabi_srli                              
+0000a222  __mspabi_srll_1                            
+0000a1fe  __mspabi_srll_10                           
+0000a1fa  __mspabi_srll_11                           
+0000a1f6  __mspabi_srll_12                           
+0000a1f2  __mspabi_srll_13                           
+0000a1ee  __mspabi_srll_14                           
+0000a1ea  __mspabi_srll_15                           
+0000a21e  __mspabi_srll_2                            
+0000a21a  __mspabi_srll_3                            
+0000a216  __mspabi_srll_4                            
+0000a212  __mspabi_srll_5                            
+0000a20e  __mspabi_srll_6                            
+0000a20a  __mspabi_srll_7                            
+0000a206  __mspabi_srll_8                            
+0000a202  __mspabi_srll_9                            
+00009898  _auto_init_hold_wdt                        
+0000a6aa  _c_int00_noargs_noexit                     
 0000fffe  _reset_vector                              
 00004360  _stack                                     
-0000a942  _system_pre_init                           
+0000a93e  _system_pre_init                           
 00002378  abIEP0Buffer                               
 00002370  abOEP0Buffer                               
 00002c78  abUsbRequestIncomingData                   
 00002c80  abUsbRequestReturnData                     
-0000a946  abort                                      
+0000a942  abort                                      
 00002c3e  abramSerialStringDescriptor                
-0000abb8  abromConfigurationDescriptorGroup          
-0000ac42  abromDeviceDescriptor                      
-0000ab18  abromStringDescriptor                      
-00002ce4  bEnumerationStatus                         
-00002ce3  bFunctionSuspended                         
-00002cb0  bHIDDataReceived_event                     
-00002cb1  bHIDDataSent_event                         
+0000abb4  abromConfigurationDescriptorGroup          
+0000ac3e  abromDeviceDescriptor                      
+0000ab14  abromStringDescriptor                      
+00002ce2  bEnumerationStatus                         
+00002ce1  bFunctionSuspended                         
+00002cae  bHIDDataReceived_event                     
+00002caf  bHIDDataSent_event                         
 00002ca9  bStatusAction                              
 ffffffff  binit                                      
 00002400  circularBuffer                             
-00002cb4  commandDeimiter                            
-00002cac  correctionVccOverTwo                       
-00002cba  counterd                                   
-00002cda  currentEncoderVoltage                      
-00002cdc  debounceEncoderTimer                       
-00002cc0  debounceTimer1                             
-00002cc2  debounceTimer2                             
-00002cc4  debounceTimer3                             
-00002cc6  debounceTimer4                             
-00002cc8  debounceTimer5                             
-00002caa  debugEvent                                 
-0000a030  defaultSetupADC                            
+00002cb2  commandDeimiter                            
+00002caa  correctionVccOverTwo                       
+00002cb8  counterd                                   
+00002cd8  currentEncoderVoltage                      
+00002cda  debounceEncoderTimer                       
+00002cbe  debounceTimer1                             
+00002cc0  debounceTimer2                             
+00002cc2  debounceTimer3                             
+00002cc4  debounceTimer4                             
+00002cc6  debounceTimer5                             
+0000a02c  defaultSetupADC                            
 00002c90  difference                                 
-00002cde  encoderEnabled                             
-00002cd4  enterTheBSL                                
-00002cca  eventEnabled1                              
-00002ccc  eventEnabled2                              
-00002cce  eventEnabled3                              
-00002cd0  eventEnabled4                              
-00002cd2  eventEnabled5                              
-000087d8  executeCommand                             
+00002cdc  encoderEnabled                             
+00002cd2  enterTheBSL                                
+00002cc8  eventEnabled1                              
+00002cca  eventEnabled2                              
+00002ccc  eventEnabled3                              
+00002cce  eventEnabled4                              
+00002cd0  eventEnabled5                              
+000087d4  executeCommand                             
 00002c92  generalIndexVar                            
 00002c94  head                                       
-00002cec  hidProtocol                                
-00009fa2  hidReceiveDataInBuffer                     
-00009a64  hidSendDataInBackground                    
-00008a98  iUsbInterruptHandler                       
-0000a1b0  initClocks                                 
-00009544  initPorts                                  
-00002cd8  lastEncoderVoltage                         
-000085fc  main                                       
-0000a846  memcpy                                     
-00009bf6  memcpyDMA                                  
-0000a6c8  memcpyV                                    
-0000a7f8  memset                                     
-00002cbe  numberOfChannels                           
-00002cd6  operationMode                              
-00002cb6  parameterDeimiter                          
+00002cea  hidProtocol                                
+00009f9e  hidReceiveDataInBuffer                     
+00009a60  hidSendDataInBackground                    
+00008a94  iUsbInterruptHandler                       
+0000a1ac  initClocks                                 
+00009540  initPorts                                  
+00002cd6  lastEncoderVoltage                         
+000085f8  main                                       
+0000a842  memcpy                                     
+00009bf2  memcpyDMA                                  
+0000a6c4  memcpyV                                    
+0000a7f4  memset                                     
+00002cbc  numberOfChannels                           
+00002cd4  operationMode                              
+00002cb4  parameterDeimiter                          
 00001c00  pbXBufferAddressEp1                        
 00001d00  pbXBufferAddressEp2                        
 00001e00  pbXBufferAddressEp3                        
@@ -1347,64 +1346,64 @@ ffffffff  binit
 000020c0  pbYBufferAddressEp85                       
 000021c0  pbYBufferAddressEp86                       
 000022c0  pbYBufferAddressEp87                       
-00002ce8  report_desc                                
-0000abe2  report_desc_HID0                           
-0000ac6e  report_desc_size                           
-00002cb2  rounds                                     
-00002ce0  sampleData                                 
-00008bb6  sendStringWithEscapeSequence               
-00009342  setupOperationMode                         
-0000ac54  stUsbHandle                                
-0000a6e2  strcat                                     
-0000a746  strcmp                                     
-0000a426  strcspn                                    
-0000a44e  strspn                                     
-00009e7e  strtok                                     
+00002ce6  report_desc                                
+0000abde  report_desc_HID0                           
+0000ac6a  report_desc_size                           
+00002cb0  rounds                                     
+00002cde  sampleData                                 
+00008bb2  sendStringWithEscapeSequence               
+0000933e  setupOperationMode                         
+0000ac50  stUsbHandle                                
+0000a6de  strcat                                     
+0000a742  strcmp                                     
+0000a422  strcspn                                    
+0000a44a  strspn                                     
+00009e7a  strtok                                     
 00000920  tEndPoint0DescriptorBlock                  
 000023c8  tInputEndPointDescriptorBlock              
 00002388  tOutputEndPointDescriptorBlock             
 00002380  tSetupPacket                               
-0000a94a  tUsbRequestList                            
+0000a946  tUsbRequestList                            
 00002c9a  tail                                       
 00002c9c  tempADCresult                              
-00002cae  tempCorrectionVariable                     
-00002cb8  tempIndex                                  
+00002cac  tempCorrectionVariable                     
+00002cb6  tempIndex                                  
 00002c00  tempSendBuffer                             
-0000a4e6  usbClearDeviceFeature                      
-00009fea  usbClearEndpointFeature                    
-0000a90c  usbClearOEP0ByteCount                      
-00009792  usbDecodeAndProcessUsbRequest              
-0000a628  usbDisableInEndpointInterrupt              
-0000a644  usbDisableOutEndpointInterrupt             
-0000a80c  usbGetConfiguration                        
-0000a7b8  usbGetConfigurationDescriptor              
-0000a7ce  usbGetDeviceDescriptor                     
-0000a3d2  usbGetDeviceStatus                         
-00009ace  usbGetEndpointStatus                       
-0000a5b2  usbGetHidDescriptor                        
-0000a5d0  usbGetInterface                            
-0000a5ee  usbGetInterfaceStatus                      
-0000a49c  usbGetReport                               
-0000a75e  usbGetReportDescriptor                     
-00009d50  usbGetStringDescriptor                     
-0000a858  usbInvalidRequest                          
-0000a820  usbReceiveDataPacketOnEP0                  
-00009ec8  usbReceiveNextPacketOnOEP0                 
-0000a912  usbRestoreInEndpointInterrupt              
-0000a918  usbRestoreOutEndpointInterrupt             
-0000a592  usbSendDataPacketOnEP0                     
-0000991c  usbSendNextPacketOnIEP0                    
-0000a2da  usbSetAddress                              
-0000a3a2  usbSetConfiguration                        
-0000a50a  usbSetDeviceFeature                        
-00009cfe  usbSetEndpointFeature                      
-0000a6fc  usbSetInterface                            
-0000a3fc  usbSetReport                               
+0000a4e2  usbClearDeviceFeature                      
+00009fe6  usbClearEndpointFeature                    
+0000a908  usbClearOEP0ByteCount                      
+0000978e  usbDecodeAndProcessUsbRequest              
+0000a624  usbDisableInEndpointInterrupt              
+0000a640  usbDisableOutEndpointInterrupt             
+0000a808  usbGetConfiguration                        
+0000a7b4  usbGetConfigurationDescriptor              
+0000a7ca  usbGetDeviceDescriptor                     
+0000a3ce  usbGetDeviceStatus                         
+00009aca  usbGetEndpointStatus                       
+0000a5ae  usbGetHidDescriptor                        
+0000a5cc  usbGetInterface                            
+0000a5ea  usbGetInterfaceStatus                      
+0000a498  usbGetReport                               
+0000a75a  usbGetReportDescriptor                     
+00009d4c  usbGetStringDescriptor                     
+0000a854  usbInvalidRequest                          
+0000a81c  usbReceiveDataPacketOnEP0                  
+00009ec4  usbReceiveNextPacketOnOEP0                 
+0000a90e  usbRestoreInEndpointInterrupt              
+0000a914  usbRestoreOutEndpointInterrupt             
+0000a58e  usbSendDataPacketOnEP0                     
+00009918  usbSendNextPacketOnIEP0                    
+0000a2d6  usbSetAddress                              
+0000a39e  usbSetConfiguration                        
+0000a506  usbSetDeviceFeature                        
+00009cfa  usbSetEndpointFeature                      
+0000a6f8  usbSetInterface                            
+0000a3f8  usbSetReport                               
 00002c9e  w                                          
 00002ca0  wBytesRemainingOnIEP0                      
 00002ca2  wBytesRemainingOnOEP0                      
 00002ca4  wUsbEventMask                              
-00002cbc  weHaveDataToSend                           
+00002cba  weHaveDataToSend                           
 
 
 GLOBAL SYMBOLS: SORTED BY Symbol Address 
@@ -2193,206 +2192,205 @@ address   name
 00002ca2  wBytesRemainingOnOEP0                      
 00002ca4  wUsbEventMask                              
 00002ca9  bStatusAction                              
-00002caa  debugEvent                                 
-00002cac  correctionVccOverTwo                       
-00002cae  tempCorrectionVariable                     
-00002cb0  bHIDDataReceived_event                     
-00002cb1  bHIDDataSent_event                         
-00002cb2  rounds                                     
-00002cb4  commandDeimiter                            
-00002cb6  parameterDeimiter                          
-00002cb8  tempIndex                                  
-00002cba  counterd                                   
-00002cbc  weHaveDataToSend                           
-00002cbe  numberOfChannels                           
-00002cc0  debounceTimer1                             
-00002cc2  debounceTimer2                             
-00002cc4  debounceTimer3                             
-00002cc6  debounceTimer4                             
-00002cc8  debounceTimer5                             
-00002cca  eventEnabled1                              
-00002ccc  eventEnabled2                              
-00002cce  eventEnabled3                              
-00002cd0  eventEnabled4                              
-00002cd2  eventEnabled5                              
-00002cd4  enterTheBSL                                
-00002cd6  operationMode                              
-00002cd8  lastEncoderVoltage                         
-00002cda  currentEncoderVoltage                      
-00002cdc  debounceEncoderTimer                       
-00002cde  encoderEnabled                             
-00002ce0  sampleData                                 
-00002ce3  bFunctionSuspended                         
-00002ce4  bEnumerationStatus                         
-00002ce6  VERSION                                    
-00002ce8  report_desc                                
-00002cec  hidProtocol                                
+00002caa  correctionVccOverTwo                       
+00002cac  tempCorrectionVariable                     
+00002cae  bHIDDataReceived_event                     
+00002caf  bHIDDataSent_event                         
+00002cb0  rounds                                     
+00002cb2  commandDeimiter                            
+00002cb4  parameterDeimiter                          
+00002cb6  tempIndex                                  
+00002cb8  counterd                                   
+00002cba  weHaveDataToSend                           
+00002cbc  numberOfChannels                           
+00002cbe  debounceTimer1                             
+00002cc0  debounceTimer2                             
+00002cc2  debounceTimer3                             
+00002cc4  debounceTimer4                             
+00002cc6  debounceTimer5                             
+00002cc8  eventEnabled1                              
+00002cca  eventEnabled2                              
+00002ccc  eventEnabled3                              
+00002cce  eventEnabled4                              
+00002cd0  eventEnabled5                              
+00002cd2  enterTheBSL                                
+00002cd4  operationMode                              
+00002cd6  lastEncoderVoltage                         
+00002cd8  currentEncoderVoltage                      
+00002cda  debounceEncoderTimer                       
+00002cdc  encoderEnabled                             
+00002cde  sampleData                                 
+00002ce1  bFunctionSuspended                         
+00002ce2  bEnumerationStatus                         
+00002ce4  VERSION                                    
+00002ce6  report_desc                                
+00002cea  hidProtocol                                
 00004360  _stack                                     
 00004400  __STACK_END                                
 00008000  ADC12ISR                                   
-00008418  USBHID_receiveData                         
-000085fc  main                                       
-000087d8  executeCommand                             
-00008976  HidToBufferFromHost                        
-00008a98  iUsbInterruptHandler                       
-00008bb6  sendStringWithEscapeSequence               
-00008cac  HidToHostFromBuffer                        
-00008d94  USB_reset                                  
-00008e7a  UCS_initFLL                                
-00009032  USB_enable                                 
-00009104  PMM_setVCoreUp                             
-000091d2  USBHID_bytesInUSBBuffer                    
-00009292  USB_InitSerialStringDescriptor             
-00009342  setupOperationMode                         
-000093f2  USB_determineFreq                          
-000094a0  USBHID_intfStatus                          
-00009544  initPorts                                  
-000095e0  USB_connectionState                        
-00009676  PMM_setVCoreDown                           
-0000970a  UCS_clockSignalInit                        
-00009792  usbDecodeAndProcessUsbRequest              
-00009818  USB_init                                   
-0000989c  _auto_init_hold_wdt                        
-0000991c  usbSendNextPacketOnIEP0                    
-0000998c  USBHID_sendData                            
-000099fa  PWRVBUSoffHandler                          
-00009a64  hidSendDataInBackground                    
-00009ace  usbGetEndpointStatus                       
-00009b38  HidCopyUsbToBuff                           
-00009b98  PWRVBUSonHandler                           
-00009bf6  memcpyDMA                                  
-00009c50  __mspabi_divul                             
-00009c50  __mspabi_remul                             
-00009ca8  DMA_initialize                             
-00009cfe  usbSetEndpointFeature                      
-00009d50  usbGetStringDescriptor                     
-00009d9e  DMA_init                                   
-00009dea  PMM_setVCore                               
-00009e34  USB_setup                                  
-00009e7e  strtok                                     
-00009ec8  usbReceiveNextPacketOnOEP0                 
-00009f12  SetupPacketInterruptHandler                
-00009f5a  TLV_getInfo                                
-00009fa2  hidReceiveDataInBuffer                     
-00009fea  usbClearEndpointFeature                    
-0000a030  defaultSetupADC                            
-0000a074  UCS_XT2StartWithTimeout                    
-0000a0b4  USB_initMemcpy                             
-0000a0f4  __memcpy_far                               
-0000a134  UNMI_ISR                                   
-0000a172  __TI_zero_init                             
-0000a1b0  initClocks                                 
-0000a1ee  __mspabi_srll_15                           
-0000a1f2  __mspabi_srll_14                           
-0000a1f6  __mspabi_srll_13                           
-0000a1fa  __mspabi_srll_12                           
-0000a1fe  __mspabi_srll_11                           
-0000a202  __mspabi_srll_10                           
-0000a206  __mspabi_srll_9                            
-0000a20a  __mspabi_srll_8                            
-0000a20e  __mspabi_srll_7                            
-0000a212  __mspabi_srll_6                            
-0000a216  __mspabi_srll_5                            
-0000a21a  __mspabi_srll_4                            
-0000a21e  __mspabi_srll_3                            
-0000a222  __mspabi_srll_2                            
-0000a226  __mspabi_srll_1                            
-0000a22c  OEP0InterruptHandler                       
-0000a268  __TI_decompress_none                       
-0000a2a4  USBHID_abortSend                           
-0000a2da  usbSetAddress                              
-0000a30e  UCS_initFLLSettle                          
-0000a340  USB_connectionInfo                         
-0000a372  USB_suspend                                
-0000a3a2  usbSetConfiguration                        
-0000a3d2  usbGetDeviceStatus                         
-0000a3fc  usbSetReport                               
-0000a426  strcspn                                    
-0000a44e  strspn                                     
-0000a476  DMA_setDstAddress                          
-0000a49c  usbGetReport                               
-0000a4c2  DMA_setSrcAddress                          
-0000a4e6  usbClearDeviceFeature                      
-0000a50a  usbSetDeviceFeature                        
-0000a52e  USB_disable                                
-0000a550  USB_disconnect                             
-0000a572  HidResetData                               
-0000a592  usbSendDataPacketOnEP0                     
-0000a5b2  usbGetHidDescriptor                        
-0000a5d0  usbGetInterface                            
-0000a5ee  usbGetInterfaceStatus                      
-0000a60c  IEP0InterruptHandler                       
-0000a628  usbDisableInEndpointInterrupt              
-0000a644  usbDisableOutEndpointInterrupt             
-0000a660  GPIO_setAsOutputPin                        
-0000a67a  GPIO_setAsPeripheralModuleFunctionOutputPin
-0000a694  USB_connect                                
-0000a6ae  _c_int00_noargs_noexit                     
-0000a6c8  memcpyV                                    
-0000a6e2  strcat                                     
-0000a6fc  usbSetInterface                            
-0000a716  USB_resume                                 
-0000a72e  WDT_A_hold                                 
-0000a746  strcmp                                     
-0000a75e  usbGetReportDescriptor                     
-0000a776  GPIO_setOutputLowOnPin                     
-0000a78c  __mspabi_divu                              
-0000a78c  __mspabi_remu                              
-0000a7a2  __mspabi_mpyi_f5hw                         
-0000a7b8  usbGetConfigurationDescriptor              
-0000a7ce  usbGetDeviceDescriptor                     
-0000a7e4  USB_handleVbusOnEvent                      
-0000a7f8  memset                                     
-0000a80c  usbGetConfiguration                        
-0000a820  usbReceiveDataPacketOnEP0                  
-0000a834  HidIsReceiveInProgress                     
-0000a846  memcpy                                     
-0000a858  usbInvalidRequest                          
-0000a86a  __TI_decompress_rle24                      
-0000a878  DMA_getInterruptStatus                     
-0000a884  USB_handleClockEvent                       
-0000a890  DMA_disableTransfers                       
-0000a89a  DMA_enableTransfers                        
-0000a8a4  __mspabi_slli                              
-0000a8ae  __mspabi_srli                              
-0000a8b8  DMA_setTransferSize                        
-0000a8c0  DMA_startTransfer                          
-0000a8c8  UCS_XT2Off                                 
-0000a8d0  USBHID_handleDataReceived                  
-0000a8d8  USBHID_handleSendCompleted                 
-0000a8e0  TIMER0_A0_ISR                              
-0000a8e8  DMA_disableTransferDuringReadModifyWrite   
-0000a8ee  DMA_enableTransferDuringReadModifyWrite    
-0000a8f4  SFR_clearInterrupt                         
-0000a8fa  UCS_clearFaultFlag                         
-0000a900  USB_getVersion                             
-0000a906  __TI_ISR_TRAP                              
-0000a90c  usbClearOEP0ByteCount                      
-0000a912  usbRestoreInEndpointInterrupt              
-0000a918  usbRestoreOutEndpointInterrupt             
-0000a91e  USBHID_handleEP0GetReport                  
-0000a922  USBHID_handleEP0SetReport                  
-0000a926  USBHID_handleEP0SetReportDataAvailable     
-0000a92a  USBHID_handleReceiveCompleted              
-0000a92e  USB_handleEnumCompleteEvent                
-0000a932  USB_handleResetEvent                       
-0000a936  USB_handleResumeEvent                      
-0000a93a  USB_handleSuspendEvent                     
-0000a93e  USB_handleVbusOffEvent                     
-0000a942  _system_pre_init                           
-0000a946  C$$EXIT                                    
-0000a946  abort                                      
-0000a94a  tUsbRequestList                            
-0000ab18  abromStringDescriptor                      
-0000abb8  abromConfigurationDescriptorGroup          
-0000abe2  report_desc_HID0                           
-0000ac42  abromDeviceDescriptor                      
-0000ac54  stUsbHandle                                
-0000ac6e  report_desc_size                           
-0000ac98  __TI_Handler_Table_Base                    
-0000aca4  __TI_Handler_Table_Limit                   
-0000acaa  __TI_CINIT_Base                            
-0000acba  __TI_CINIT_Limit                           
+00008414  USBHID_receiveData                         
+000085f8  main                                       
+000087d4  executeCommand                             
+00008972  HidToBufferFromHost                        
+00008a94  iUsbInterruptHandler                       
+00008bb2  sendStringWithEscapeSequence               
+00008ca8  HidToHostFromBuffer                        
+00008d90  USB_reset                                  
+00008e76  UCS_initFLL                                
+0000902e  USB_enable                                 
+00009100  PMM_setVCoreUp                             
+000091ce  USBHID_bytesInUSBBuffer                    
+0000928e  USB_InitSerialStringDescriptor             
+0000933e  setupOperationMode                         
+000093ee  USB_determineFreq                          
+0000949c  USBHID_intfStatus                          
+00009540  initPorts                                  
+000095dc  USB_connectionState                        
+00009672  PMM_setVCoreDown                           
+00009706  UCS_clockSignalInit                        
+0000978e  usbDecodeAndProcessUsbRequest              
+00009814  USB_init                                   
+00009898  _auto_init_hold_wdt                        
+00009918  usbSendNextPacketOnIEP0                    
+00009988  USBHID_sendData                            
+000099f6  PWRVBUSoffHandler                          
+00009a60  hidSendDataInBackground                    
+00009aca  usbGetEndpointStatus                       
+00009b34  HidCopyUsbToBuff                           
+00009b94  PWRVBUSonHandler                           
+00009bf2  memcpyDMA                                  
+00009c4c  __mspabi_divul                             
+00009c4c  __mspabi_remul                             
+00009ca4  DMA_initialize                             
+00009cfa  usbSetEndpointFeature                      
+00009d4c  usbGetStringDescriptor                     
+00009d9a  DMA_init                                   
+00009de6  PMM_setVCore                               
+00009e30  USB_setup                                  
+00009e7a  strtok                                     
+00009ec4  usbReceiveNextPacketOnOEP0                 
+00009f0e  SetupPacketInterruptHandler                
+00009f56  TLV_getInfo                                
+00009f9e  hidReceiveDataInBuffer                     
+00009fe6  usbClearEndpointFeature                    
+0000a02c  defaultSetupADC                            
+0000a070  UCS_XT2StartWithTimeout                    
+0000a0b0  USB_initMemcpy                             
+0000a0f0  __memcpy_far                               
+0000a130  UNMI_ISR                                   
+0000a16e  __TI_zero_init                             
+0000a1ac  initClocks                                 
+0000a1ea  __mspabi_srll_15                           
+0000a1ee  __mspabi_srll_14                           
+0000a1f2  __mspabi_srll_13                           
+0000a1f6  __mspabi_srll_12                           
+0000a1fa  __mspabi_srll_11                           
+0000a1fe  __mspabi_srll_10                           
+0000a202  __mspabi_srll_9                            
+0000a206  __mspabi_srll_8                            
+0000a20a  __mspabi_srll_7                            
+0000a20e  __mspabi_srll_6                            
+0000a212  __mspabi_srll_5                            
+0000a216  __mspabi_srll_4                            
+0000a21a  __mspabi_srll_3                            
+0000a21e  __mspabi_srll_2                            
+0000a222  __mspabi_srll_1                            
+0000a228  OEP0InterruptHandler                       
+0000a264  __TI_decompress_none                       
+0000a2a0  USBHID_abortSend                           
+0000a2d6  usbSetAddress                              
+0000a30a  UCS_initFLLSettle                          
+0000a33c  USB_connectionInfo                         
+0000a36e  USB_suspend                                
+0000a39e  usbSetConfiguration                        
+0000a3ce  usbGetDeviceStatus                         
+0000a3f8  usbSetReport                               
+0000a422  strcspn                                    
+0000a44a  strspn                                     
+0000a472  DMA_setDstAddress                          
+0000a498  usbGetReport                               
+0000a4be  DMA_setSrcAddress                          
+0000a4e2  usbClearDeviceFeature                      
+0000a506  usbSetDeviceFeature                        
+0000a52a  USB_disable                                
+0000a54c  USB_disconnect                             
+0000a56e  HidResetData                               
+0000a58e  usbSendDataPacketOnEP0                     
+0000a5ae  usbGetHidDescriptor                        
+0000a5cc  usbGetInterface                            
+0000a5ea  usbGetInterfaceStatus                      
+0000a608  IEP0InterruptHandler                       
+0000a624  usbDisableInEndpointInterrupt              
+0000a640  usbDisableOutEndpointInterrupt             
+0000a65c  GPIO_setAsOutputPin                        
+0000a676  GPIO_setAsPeripheralModuleFunctionOutputPin
+0000a690  USB_connect                                
+0000a6aa  _c_int00_noargs_noexit                     
+0000a6c4  memcpyV                                    
+0000a6de  strcat                                     
+0000a6f8  usbSetInterface                            
+0000a712  USB_resume                                 
+0000a72a  WDT_A_hold                                 
+0000a742  strcmp                                     
+0000a75a  usbGetReportDescriptor                     
+0000a772  GPIO_setOutputLowOnPin                     
+0000a788  __mspabi_divu                              
+0000a788  __mspabi_remu                              
+0000a79e  __mspabi_mpyi_f5hw                         
+0000a7b4  usbGetConfigurationDescriptor              
+0000a7ca  usbGetDeviceDescriptor                     
+0000a7e0  USB_handleVbusOnEvent                      
+0000a7f4  memset                                     
+0000a808  usbGetConfiguration                        
+0000a81c  usbReceiveDataPacketOnEP0                  
+0000a830  HidIsReceiveInProgress                     
+0000a842  memcpy                                     
+0000a854  usbInvalidRequest                          
+0000a866  __TI_decompress_rle24                      
+0000a874  DMA_getInterruptStatus                     
+0000a880  USB_handleClockEvent                       
+0000a88c  DMA_disableTransfers                       
+0000a896  DMA_enableTransfers                        
+0000a8a0  __mspabi_slli                              
+0000a8aa  __mspabi_srli                              
+0000a8b4  DMA_setTransferSize                        
+0000a8bc  DMA_startTransfer                          
+0000a8c4  UCS_XT2Off                                 
+0000a8cc  USBHID_handleDataReceived                  
+0000a8d4  USBHID_handleSendCompleted                 
+0000a8dc  TIMER0_A0_ISR                              
+0000a8e4  DMA_disableTransferDuringReadModifyWrite   
+0000a8ea  DMA_enableTransferDuringReadModifyWrite    
+0000a8f0  SFR_clearInterrupt                         
+0000a8f6  UCS_clearFaultFlag                         
+0000a8fc  USB_getVersion                             
+0000a902  __TI_ISR_TRAP                              
+0000a908  usbClearOEP0ByteCount                      
+0000a90e  usbRestoreInEndpointInterrupt              
+0000a914  usbRestoreOutEndpointInterrupt             
+0000a91a  USBHID_handleEP0GetReport                  
+0000a91e  USBHID_handleEP0SetReport                  
+0000a922  USBHID_handleEP0SetReportDataAvailable     
+0000a926  USBHID_handleReceiveCompleted              
+0000a92a  USB_handleEnumCompleteEvent                
+0000a92e  USB_handleResetEvent                       
+0000a932  USB_handleResumeEvent                      
+0000a936  USB_handleSuspendEvent                     
+0000a93a  USB_handleVbusOffEvent                     
+0000a93e  _system_pre_init                           
+0000a942  C$$EXIT                                    
+0000a942  abort                                      
+0000a946  tUsbRequestList                            
+0000ab14  abromStringDescriptor                      
+0000abb4  abromConfigurationDescriptorGroup          
+0000abde  report_desc_HID0                           
+0000ac3e  abromDeviceDescriptor                      
+0000ac50  stUsbHandle                                
+0000ac6a  report_desc_size                           
+0000ac94  __TI_Handler_Table_Base                    
+0000aca0  __TI_Handler_Table_Limit                   
+0000aca6  __TI_CINIT_Base                            
+0000acb6  __TI_CINIT_Limit                           
 0000ffd2  __TI_int41                                 
 0000ffd4  __TI_int42                                 
 0000ffd6  __TI_int43                                 
@@ -2422,4 +2420,4 @@ ffffffff  binit
 UNDEFED   __TI_INITARRAY_Base                        
 UNDEFED   __TI_INITARRAY_Limit                       
 
-[1010 symbols]
+[1009 symbols]

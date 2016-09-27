@@ -8,25 +8,25 @@ C_SRCS += \
 ../USB_API/USB_MSC_API/UsbMscScsi.c \
 ../USB_API/USB_MSC_API/UsbMscStateMachine.c 
 
-C_DEPS += \
-./USB_API/USB_MSC_API/UsbMscReq.pp \
-./USB_API/USB_MSC_API/UsbMscScsi.pp \
-./USB_API/USB_MSC_API/UsbMscStateMachine.pp 
-
 OBJS += \
 ./USB_API/USB_MSC_API/UsbMscReq.obj \
 ./USB_API/USB_MSC_API/UsbMscScsi.obj \
 ./USB_API/USB_MSC_API/UsbMscStateMachine.obj 
 
-OBJS__QUOTED += \
-"USB_API/USB_MSC_API/UsbMscReq.obj" \
-"USB_API/USB_MSC_API/UsbMscScsi.obj" \
-"USB_API/USB_MSC_API/UsbMscStateMachine.obj" 
+C_DEPS += \
+./USB_API/USB_MSC_API/UsbMscReq.pp \
+./USB_API/USB_MSC_API/UsbMscScsi.pp \
+./USB_API/USB_MSC_API/UsbMscStateMachine.pp 
 
 C_DEPS__QUOTED += \
-"USB_API/USB_MSC_API/UsbMscReq.pp" \
-"USB_API/USB_MSC_API/UsbMscScsi.pp" \
-"USB_API/USB_MSC_API/UsbMscStateMachine.pp" 
+"USB_API\USB_MSC_API\UsbMscReq.pp" \
+"USB_API\USB_MSC_API\UsbMscScsi.pp" \
+"USB_API\USB_MSC_API\UsbMscStateMachine.pp" 
+
+OBJS__QUOTED += \
+"USB_API\USB_MSC_API\UsbMscReq.obj" \
+"USB_API\USB_MSC_API\UsbMscScsi.obj" \
+"USB_API\USB_MSC_API\UsbMscStateMachine.obj" 
 
 C_SRCS__QUOTED += \
 "../USB_API/USB_MSC_API/UsbMscReq.c" \

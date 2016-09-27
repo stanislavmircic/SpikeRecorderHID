@@ -13,16 +13,6 @@ C_SRCS += \
 ../driverlib/MSP430F5xx_6xx/deprecated/sysctl.c \
 ../driverlib/MSP430F5xx_6xx/deprecated/ucs.c 
 
-C_DEPS += \
-./driverlib/MSP430F5xx_6xx/deprecated/dma.pp \
-./driverlib/MSP430F5xx_6xx/deprecated/flashctl.pp \
-./driverlib/MSP430F5xx_6xx/deprecated/mpy32.pp \
-./driverlib/MSP430F5xx_6xx/deprecated/pmm.pp \
-./driverlib/MSP430F5xx_6xx/deprecated/ram.pp \
-./driverlib/MSP430F5xx_6xx/deprecated/sfr.pp \
-./driverlib/MSP430F5xx_6xx/deprecated/sysctl.pp \
-./driverlib/MSP430F5xx_6xx/deprecated/ucs.pp 
-
 OBJS += \
 ./driverlib/MSP430F5xx_6xx/deprecated/dma.obj \
 ./driverlib/MSP430F5xx_6xx/deprecated/flashctl.obj \
@@ -33,25 +23,35 @@ OBJS += \
 ./driverlib/MSP430F5xx_6xx/deprecated/sysctl.obj \
 ./driverlib/MSP430F5xx_6xx/deprecated/ucs.obj 
 
-OBJS__QUOTED += \
-"driverlib/MSP430F5xx_6xx/deprecated/dma.obj" \
-"driverlib/MSP430F5xx_6xx/deprecated/flashctl.obj" \
-"driverlib/MSP430F5xx_6xx/deprecated/mpy32.obj" \
-"driverlib/MSP430F5xx_6xx/deprecated/pmm.obj" \
-"driverlib/MSP430F5xx_6xx/deprecated/ram.obj" \
-"driverlib/MSP430F5xx_6xx/deprecated/sfr.obj" \
-"driverlib/MSP430F5xx_6xx/deprecated/sysctl.obj" \
-"driverlib/MSP430F5xx_6xx/deprecated/ucs.obj" 
+C_DEPS += \
+./driverlib/MSP430F5xx_6xx/deprecated/dma.pp \
+./driverlib/MSP430F5xx_6xx/deprecated/flashctl.pp \
+./driverlib/MSP430F5xx_6xx/deprecated/mpy32.pp \
+./driverlib/MSP430F5xx_6xx/deprecated/pmm.pp \
+./driverlib/MSP430F5xx_6xx/deprecated/ram.pp \
+./driverlib/MSP430F5xx_6xx/deprecated/sfr.pp \
+./driverlib/MSP430F5xx_6xx/deprecated/sysctl.pp \
+./driverlib/MSP430F5xx_6xx/deprecated/ucs.pp 
 
 C_DEPS__QUOTED += \
-"driverlib/MSP430F5xx_6xx/deprecated/dma.pp" \
-"driverlib/MSP430F5xx_6xx/deprecated/flashctl.pp" \
-"driverlib/MSP430F5xx_6xx/deprecated/mpy32.pp" \
-"driverlib/MSP430F5xx_6xx/deprecated/pmm.pp" \
-"driverlib/MSP430F5xx_6xx/deprecated/ram.pp" \
-"driverlib/MSP430F5xx_6xx/deprecated/sfr.pp" \
-"driverlib/MSP430F5xx_6xx/deprecated/sysctl.pp" \
-"driverlib/MSP430F5xx_6xx/deprecated/ucs.pp" 
+"driverlib\MSP430F5xx_6xx\deprecated\dma.pp" \
+"driverlib\MSP430F5xx_6xx\deprecated\flashctl.pp" \
+"driverlib\MSP430F5xx_6xx\deprecated\mpy32.pp" \
+"driverlib\MSP430F5xx_6xx\deprecated\pmm.pp" \
+"driverlib\MSP430F5xx_6xx\deprecated\ram.pp" \
+"driverlib\MSP430F5xx_6xx\deprecated\sfr.pp" \
+"driverlib\MSP430F5xx_6xx\deprecated\sysctl.pp" \
+"driverlib\MSP430F5xx_6xx\deprecated\ucs.pp" 
+
+OBJS__QUOTED += \
+"driverlib\MSP430F5xx_6xx\deprecated\dma.obj" \
+"driverlib\MSP430F5xx_6xx\deprecated\flashctl.obj" \
+"driverlib\MSP430F5xx_6xx\deprecated\mpy32.obj" \
+"driverlib\MSP430F5xx_6xx\deprecated\pmm.obj" \
+"driverlib\MSP430F5xx_6xx\deprecated\ram.obj" \
+"driverlib\MSP430F5xx_6xx\deprecated\sfr.obj" \
+"driverlib\MSP430F5xx_6xx\deprecated\sysctl.obj" \
+"driverlib\MSP430F5xx_6xx\deprecated\ucs.obj" 
 
 C_SRCS__QUOTED += \
 "../driverlib/MSP430F5xx_6xx/deprecated/dma.c" \

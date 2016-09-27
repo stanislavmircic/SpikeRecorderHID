@@ -7,21 +7,21 @@ C_SRCS += \
 ../USB_API/USB_Common/usb.c \
 ../USB_API/USB_Common/usbdma.c 
 
-C_DEPS += \
-./USB_API/USB_Common/usb.pp \
-./USB_API/USB_Common/usbdma.pp 
-
 OBJS += \
 ./USB_API/USB_Common/usb.obj \
 ./USB_API/USB_Common/usbdma.obj 
 
-OBJS__QUOTED += \
-"USB_API/USB_Common/usb.obj" \
-"USB_API/USB_Common/usbdma.obj" 
+C_DEPS += \
+./USB_API/USB_Common/usb.pp \
+./USB_API/USB_Common/usbdma.pp 
 
 C_DEPS__QUOTED += \
-"USB_API/USB_Common/usb.pp" \
-"USB_API/USB_Common/usbdma.pp" 
+"USB_API\USB_Common\usb.pp" \
+"USB_API\USB_Common\usbdma.pp" 
+
+OBJS__QUOTED += \
+"USB_API\USB_Common\usb.obj" \
+"USB_API\USB_Common\usbdma.obj" 
 
 C_SRCS__QUOTED += \
 "../USB_API/USB_Common/usb.c" \

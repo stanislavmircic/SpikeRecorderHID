@@ -1,6 +1,10 @@
 /* --COPYRIGHT--
  *
-/*  Backyard Brains 2015
+ *  Backyard Brains 2015
+ *  Build 004
+ *
+ *  This version has power rail detection.
+ *  Stanislav Mircic 26 Sep 2016
  * ======== main.c ========
  */
 #include <string.h>
@@ -21,7 +25,7 @@
 
 
 //================ Parameters ===================
-#define FIRMWARE_VERSION "0.02"  // firmware version. Try to keep it to 4 characters
+#define FIRMWARE_VERSION "0.04"  // firmware version. Try to keep it to 4 characters
 #define HARDWARE_TYPE "NEURONSB" // hardware type/product. Try not to go over 8 characters
 #define HARDWARE_VERSION "0.5"  // hardware version. Try to keep it to 4 characters
 #define COMMAND_RESPONSE_LENGTH 35  //16 is just the delimiters etc.
@@ -36,12 +40,18 @@
 #define OPERATION_MODE_ARDUINO_BOARD 3
 #define OPERATION_MODE_MORE_ANALOG 4
 
-#define TEN_K_SAMPLE_RATE 2500
-#define HALF_SAMPLE_RATE 3799
+#define TEN_K_SAMPLE_RATE 1600
+#define HALF_SAMPLE_RATE 3200
+
+#define LOW_RAIL_VOLTAGE_THRESHOLD 682
 
 #define GREEN_LED BIT0
 #define RED_LED BIT1
 #define RELAY_OUTPUT BIT7
+
+#define POWER_DOWN_LED BIT1
+#define POWER_ENABLE BIT0
+#define POWER_RAIL_MEASUREMENT_PIN BIT0
 
 #define IO1 BIT2
 #define IO2 BIT3
@@ -51,10 +61,12 @@
 //p5.1 = A9 is used to correct Vcc/2 offset
 #define VCCTWO BIT1
 
-unsigned int debugEvent = 0;
 int correctionVccOverTwo = 0;
 unsigned int tempCorrectionVariable = 0;
 
+int lowRailVoltageDetected = 0;
+unsigned int blinkingLowVoltageTimer = 0;
+#define BLINKING_LOW_VOLTAGE_TIMER_MAX_VALUE 5000
 //===============================================
 
 // Global flags set by events
@@ -72,15 +84,18 @@ char *parameterDeimiter = ":";
 
 
 
-#define MEGA_DATA_LENGTH 248//992
+#define MEGA_DATA_LENGTH 2048//992
 #define RECEIVE_BUFFER_LENGTH 62
-uint8_t bufferX[MEGA_DATA_LENGTH];
-uint8_t bufferY[MEGA_DATA_LENGTH];
+
+uint8_t tempSendBuffer[62];
+uint8_t circularBuffer[MEGA_DATA_LENGTH];
 
 unsigned int tempADCresult;
-unsigned int writingHeadX;
-unsigned int writingHeadY;
-unsigned int weUseBufferX;
+unsigned int head;
+unsigned int tail;
+unsigned int difference;
+unsigned int generalIndexVar;
+
 
 unsigned int tempIndex = 0;//used for parsing config parameters etc.
 unsigned int counterd = 0;//debug counter
@@ -135,8 +150,6 @@ void setupOperationMode(void);
 void main (void)
 {
 
-	  uint8_t y;
-
     // Set up clocks/IOs.  initPorts()/initClocks() will need to be customized
     // for your application, but MCLK should be between 4-25MHz.  Using the
     // DCO/FLL for MCLK is recommended, instead of the crystal.  For examples 
@@ -152,7 +165,7 @@ void main (void)
 #endif
     
        initPorts();            // Config GPIOS for low-power (output low)
-       initClocks(25000000);   // Config clocks. MCLK=SMCLK=FLL=8MHz; ACLK=REFO=32kHz
+       initClocks(16000000);   // Config clocks. MCLK=SMCLK=FLL=8MHz; ACLK=REFO=32kHz
        USB_setup(TRUE, TRUE);  // Init USB & events; if a host is present, connect
        operationMode = OPERATION_MODE_DEFAULT;
        defaultSetupADC();
@@ -163,31 +176,32 @@ void main (void)
        enterTheBSL = 0;
 
        //setup buffers variables for ADC sampling
-       weUseBufferX = 1;
-       writingHeadY = 0;
-       writingHeadX = 0;
-
+       head = 0;
+       tail = 0;
+       difference = 0;
+       generalIndexVar = 0;
        //prepare state for USB
        bHIDDataSent_event = TRUE;
 
-       // Pre-fill the buffers with visible ASCII characters (0x21 to 0x7E)
-       y = 0x21;
-       for (w = 0; w < MEGA_DATA_LENGTH; w++)
-       {
-           bufferX[w] = y;
-           bufferY[w] = y;
-       }
 
        //LED diode (BIT0, BIT1) and relay (BIT7)
        P4SEL = 0;//digital I/O
        P4DIR = GREEN_LED + RED_LED + RELAY_OUTPUT;
        P4OUT = 0;
 
+       //Enable disable powersupply on P1.0
+       //Power down blinking LED on P1.1
+	   P1SEL = 0;//digital I/O
+	   P1DIR = POWER_DOWN_LED + POWER_ENABLE;
+	   P1OUT =  POWER_ENABLE;
+
+
+
+
        //set A9 for Vcc/2 reference (for offset correction)
+	   //set A8 for measurement of power rail
        REFCTL0 &= ~REFON;//turn off ref. function
-       P5SEL |= VCCTWO;
-
-
+       P5SEL |= VCCTWO +POWER_RAIL_MEASUREMENT_PIN;
 
 
        __enable_interrupt();  // Enable interrupts globally
@@ -210,8 +224,10 @@ void main (void)
 			   // in this mode; the MCU must be active or LPM0 during USB communication
                case ST_ENUM_ACTIVE:
 
+            	   //--------- receiving
             	   if(bHIDDataReceived_event)
             	   {
+
 
             		   // Holds the new  string
 					   char receivedString[RECEIVE_BUFFER_LENGTH] = "";
@@ -231,41 +247,47 @@ void main (void)
 					   executeCommand(command3);
 
             		   bHIDDataReceived_event = FALSE;
+
             	   }
 
-
-            	   if(weHaveDataToSend >0 && bHIDDataSent_event)
+            	   if(difference > generalIndexVar)
             	   {
-            		   if(debugEvent ==1)
+            		   while(difference > generalIndexVar && generalIndexVar<62)
             		   {
-            			   debugEvent = 0;
+						   tempSendBuffer[generalIndexVar] = circularBuffer[tail];
+						   generalIndexVar++;
+						   tail++;
+						   if(tail==MEGA_DATA_LENGTH)
+						   {
+							   tail = 0;
+						   }
+					   }
+            	   }
 
-            		   }
-
-            		   weHaveDataToSend = 0;
+            	   // ----------- sending
+            	   if(difference >61 && bHIDDataSent_event)
+            	   {
             		   bHIDDataSent_event = FALSE;
-                	   if(weUseBufferX)
-                	   {
-                           if (hidSendDataInBackground((uint8_t*)bufferY,MEGA_DATA_LENGTH,
-                          								   HID0_INTFNUM,0))
-                           {
-								   // Operation probably still open; cancel it
-								   USBHID_abortSend(&w,HID0_INTFNUM);
-								   break;
-                           }
-
-                	   }
-                	   else
-                       {
-
-                           if (hidSendDataInBackground((uint8_t*)bufferX,MEGA_DATA_LENGTH,
-                           								   HID0_INTFNUM,0))
-                           {
-                          	  	  // Operation probably still open; cancel it
-                           	   	   USBHID_abortSend(&w,HID0_INTFNUM);
-                           			break;
-                           }
-                       }
+            		   while(difference > generalIndexVar && generalIndexVar<62)
+					   {
+						   tempSendBuffer[generalIndexVar] = circularBuffer[tail];
+						   generalIndexVar++;
+						   tail++;
+						   if(tail==MEGA_DATA_LENGTH)
+						   {
+							   tail = 0;
+						   }
+					   }
+            		   generalIndexVar = 0;
+            		   difference -=62;
+            		   //103usec
+					   if (hidSendDataInBackground((uint8_t*)tempSendBuffer,62,
+													   HID0_INTFNUM,0))
+					   {
+							   // Operation probably still open; cancel it
+							   USBHID_abortSend(&w,HID0_INTFNUM);
+							   break;
+					   }
             	   }
 
                    break;
@@ -289,9 +311,9 @@ void main (void)
             	   //prepare buffer for next connection
             	   sampleData = 0;
             	   P4OUT &= ~(RED_LED);
-            	   weUseBufferX = 1;
-				   writingHeadY = 0;
-				   writingHeadX = 0;
+            	   head = 0;
+            	   tail = 0;
+            	   difference = 0;
 				   //setup flag in case somebody pull the USB plug while it was sending
             	   bHIDDataSent_event = TRUE;
                    break;
@@ -304,6 +326,8 @@ void main (void)
                case ST_ENUM_IN_PROGRESS:
                default:;
            }
+
+
        }  //while(1)
    } //main()
 
@@ -321,6 +345,7 @@ void setupOperationMode(void)
 			numberOfChannels = 2;
 			P6SEL = BIT0+BIT1+BIT7;//analog inputs
 			P6DIR = 0;//select all as inputs
+			P6REN = ~(BIT0+BIT1+BIT7);
 			P6OUT = 0;//put output register to zero
 			P4OUT |= RELAY_OUTPUT + GREEN_LED;
 			//default setup of ADC, redefines part of Port 6 pins
@@ -333,6 +358,7 @@ void setupOperationMode(void)
 			P6SEL = BIT0+BIT1+BIT7;//select analog inputs
 			//set all to inputs
 			P6DIR = 0;
+			P6REN = ~(BIT0+BIT1+BIT7);
 			P6OUT = 0;//put output register to zero
 
 			P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);
@@ -345,6 +371,8 @@ void setupOperationMode(void)
 			numberOfChannels = 4;
 			//make 4 analog inputs and additional for encoder
 			P6SEL = BIT0+BIT1+IO4+IO5 +BIT7;
+			P6REN = ~(BIT0+BIT1+IO4+IO5 +BIT7);
+			P6OUT = 0;//put output register to zero
 			P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);
 			P4OUT |=  GREEN_LED;
 
@@ -354,6 +382,7 @@ void setupOperationMode(void)
 			numberOfChannels = 2;
 			P6SEL = BIT0+BIT1+BIT7;//select all pins as digital I/O
 			P6DIR = 0;//select all as inputs
+			P6REN = ~(BIT0+BIT1+BIT7);
 			P6OUT = 0;//put output register to zero
 
 			P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);
@@ -365,6 +394,7 @@ void setupOperationMode(void)
 			numberOfChannels = 2;
 			P6SEL = BIT0+BIT1+BIT7;//select all pins as digital I/O
 			P6DIR = 0;//select all as inputs
+			P6REN = ~(BIT0+BIT1+BIT7);
 			P6OUT = 0;//put output register to zero
 
 			P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);
@@ -514,76 +544,33 @@ void sendStringWithEscapeSequence(char * stringToSend)
 	//check if sampling timer is turned ON
 	int weAreSendingSamples = TA0CCTL0 & CCIE;
 
-	if(sampleData==1)
-	{
+
 		//now put it to output buffer/s
 		for(i=0;i<length;i++)
 		{
-				if(weUseBufferX==1)
-				{
-					bufferX[writingHeadX++] = responseBufferWithEscape[i];
-					if(writingHeadX>=MEGA_DATA_LENGTH)
-					{
-						writingHeadY = 0;
-						weUseBufferX = 0;
-						weHaveDataToSend = 1;
-					}
-				}
-				else
-				{
-					bufferY[writingHeadY++] = responseBufferWithEscape[i];
-					if(writingHeadY>=MEGA_DATA_LENGTH)
-					{
-						writingHeadX = 0;
-						weUseBufferX = 1;
-						weHaveDataToSend = 1;
-					}
-				}
-		}
-		int k;
-		for(k=i;k<24;k++)
-		{
 
-			if(weUseBufferX==1)
-			{
-				bufferX[writingHeadX++] = 0;
-				if(writingHeadX>=MEGA_DATA_LENGTH)
-				{
-					writingHeadY = 0;
-					weUseBufferX = 0;
-					weHaveDataToSend = 1;
-				}
-			}
-			else
-			{
-				bufferY[writingHeadY++] = 0;
-				if(writingHeadY>=MEGA_DATA_LENGTH)
-				{
-					writingHeadX = 0;
-					weUseBufferX = 1;
-					weHaveDataToSend = 1;
-				}
-			}
+					circularBuffer[head++] = responseBufferWithEscape[i];
+					difference++;
+					if(head>=MEGA_DATA_LENGTH)
+					{
+						head = 0;
+					}
 		}
-	}
-	else   //if we are not sending samples right now
-	{
-		//if we are not sending samples just use buffer X
-		//fill it with data and trigger sending flag
-		writingHeadX = 0;
-		weUseBufferX = 0;//this means that buffer X is ready for sending the data
 
-		for(i=0;i<length;i++)
+		//if we are not sending data than add zeros up to one full frame = 62
+		if(sampleData==0)
 		{
-			bufferX[writingHeadX++] = responseBufferWithEscape[i];
-			if(writingHeadX>=MEGA_DATA_LENGTH)
+			for(i=length;i<62;i++)
 			{
-				break;
+				circularBuffer[head++] = 0;
+				difference++;
+				if(head>=MEGA_DATA_LENGTH)
+				{
+					head = 0;
+				}
 			}
+			difference = 62;
 		}
-		//always trigger sending flag
-		weHaveDataToSend = 1;
-	}
 }
 
 
@@ -655,7 +642,7 @@ void __attribute__ ((interrupt(TIMER0_A0_VECTOR))) TIMER0_A0_ISR (void)
 {
 	//P4OUT ^= BIT1;
 
-	P4OUT ^= RELAY_OUTPUT;
+	//P4OUT ^= RELAY_OUTPUT;
 	ADC12CTL0 |= ADC12ENC + ADC12SC;
     //__bic_SR_register_on_exit(LPM3_bits);   // Exit LPM
 }
@@ -673,7 +660,7 @@ void defaultSetupADC()
    // ADC configuration
    //ADC12SHT02 Sampling time 16 cycles,
    //ADC12ON  ADC12 on
-   ADC12CTL0 = ADC12SHT02 + ADC12ON +ADC12MSC;
+   ADC12CTL0 = ADC12SHT01 + ADC12ON +ADC12MSC;
 
    //ADC12CSTARTADD_0 start conversation address 0;
    //ADC12SHP - SAMPCON signal is sourced from the sampling timer.
@@ -686,11 +673,12 @@ void defaultSetupADC()
    ADC12MCTL1 = ADC12INCH_1;//recording channel
    ADC12MCTL2 = ADC12INCH_5;//recording channel
    ADC12MCTL3 = ADC12INCH_6;//recording channel
-   ADC12MCTL4 = ADC12INCH_7+ADC12EOS;//board detection input
-   //ADC12MCTL5 = ADC12INCH_9 +ADC12EOS;
+   ADC12MCTL4 = ADC12INCH_7;//board detection input
+   ADC12MCTL5 = ADC12INCH_8;//power rail masurement pin
+   ADC12MCTL6 = ADC12INCH_9 +ADC12EOS;
    //ADC12IE = 0x02;//enable interrupt on ADC12IFG2 bit
 
-   ADC12IE = ADC12IE4;//trigger interrupt after conversation of A2
+   ADC12IE = ADC12IE6;//trigger interrupt after conversation of A2 -------- it was ADC12IE5 before adding power rail measurement
    ADC12CTL0 &= ~ADC12SC;
  //  ADC12CTL0 |= ADC12ENC; // Enable conversion
 
@@ -707,18 +695,49 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 #endif
 {
 
-	P4OUT |= RED_LED;
-	//
-	// ------------------- BOARD DETECTION -----------------------------
+	//P4OUT |= RED_LED;
 
 	//calculate offset correction
-	//tempADCresult = ADC12MEM5;
-	tempADCresult = 512;
+	tempADCresult = ADC12MEM6;
+	//tempADCresult = 512;
 	correctionVccOverTwo = tempADCresult-512;
 	tempCorrectionVariable = 1023+correctionVccOverTwo;
 
-	currentEncoderVoltage = ADC12MEM4;
+	// ------------------------------- CHECK THE POWER RAIL VOLTAGE -------------------------------
+	tempADCresult = ADC12MEM5;
+	if(tempADCresult<LOW_RAIL_VOLTAGE_THRESHOLD)
+	{
+        lowRailVoltageDetected = 1;
+	}
+	else
+	{
+		lowRailVoltageDetected = 0;
+	}
 
+	if(lowRailVoltageDetected>0)
+	{
+		if(blinkingLowVoltageTimer>0)
+		{
+			blinkingLowVoltageTimer = blinkingLowVoltageTimer -1;
+		}
+		else
+		{
+			blinkingLowVoltageTimer = BLINKING_LOW_VOLTAGE_TIMER_MAX_VALUE;
+			P1OUT ^=  POWER_DOWN_LED;
+		}
+	}
+	else
+	{
+		P1OUT &=  ~(POWER_DOWN_LED);
+	}
+
+	//--------------------------------------------------------------------------------------------
+
+
+	//
+	// ------------------- BOARD DETECTION -----------------------------
+
+	currentEncoderVoltage = ADC12MEM4;
 
 	if(debounceEncoderTimer>0)
 	{
@@ -893,7 +912,6 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 								{
 										eventEnabled1 = 0;
 										debounceTimer1 = DEBOUNCE_TIME;
-										debugEvent = 1;
 										sendStringWithEscapeSequence("EVNT:1;");
 								}
 						}
@@ -966,10 +984,36 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 
 	if(sampleData == 1)
 	{
-		if(weUseBufferX==1)
-		{
-			tempIndex = writingHeadX;//remember position of begining of frame to put flag bit
+
+			tempIndex = head;//remember position of begining of frame to put flag bit
 			tempADCresult = ADC12MEM0;
+			//correct DC offset
+			if((int)tempADCresult<correctionVccOverTwo)
+			{
+				tempADCresult = 0;
+			}
+			else if(tempCorrectionVariable<tempADCresult)
+			{
+					tempADCresult = 1023;
+			}
+			else
+			{
+				tempADCresult = tempADCresult - correctionVccOverTwo;
+			}
+
+			circularBuffer[head++] = (0x7u & (tempADCresult>>7));
+			difference++;
+			if(head==MEGA_DATA_LENGTH)
+			{
+				head = 0;
+			}
+			circularBuffer[head++] = (0x7Fu & tempADCresult);
+			difference++;
+			if(head==MEGA_DATA_LENGTH)
+			{
+				head = 0;
+			}
+			tempADCresult = ADC12MEM1;
 
 			//correct DC offset
 			if((int)tempADCresult<correctionVccOverTwo)
@@ -985,43 +1029,29 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 				tempADCresult = tempADCresult - correctionVccOverTwo;
 			}
 
-			bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
-			bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
-
-			tempADCresult = ADC12MEM1;
-
-			//correct DC offset
-			if((int)tempADCresult<correctionVccOverTwo)
+			circularBuffer[head++] = (0x7u & (tempADCresult>>7));
+			difference++;
+			if(head==MEGA_DATA_LENGTH)
 			{
-				tempADCresult = 0;
+				head = 0;
 			}
-			else if(tempCorrectionVariable<(int)tempADCresult)
+			circularBuffer[head++] = (0x7Fu & tempADCresult);
+			difference++;
+			if(head==MEGA_DATA_LENGTH)
 			{
-					tempADCresult = 1023;
-			}
-			else
-			{
-				tempADCresult = tempADCresult - correctionVccOverTwo;
-			}
-
-			bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
-			bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
-			if(writingHeadX>=MEGA_DATA_LENGTH)
-			{
-				writingHeadY = 0;
-				weUseBufferX = 0;
-				weHaveDataToSend = 1;
+				head = 0;
 			}
 
 			if(numberOfChannels>2)
 			{
 				tempADCresult = ADC12MEM2;
+
 				//correct DC offset
 				if((int)tempADCresult<correctionVccOverTwo)
 				{
 					tempADCresult = 0;
 				}
-				else if(tempCorrectionVariable<(int)tempADCresult)
+				else if(tempCorrectionVariable<tempADCresult)
 				{
 						tempADCresult = 1023;
 				}
@@ -1029,16 +1059,28 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 				{
 					tempADCresult = tempADCresult - correctionVccOverTwo;
 				}
-				bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
-				bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
+
+				circularBuffer[head++] = (0x7u & (tempADCresult>>7));
+				difference++;
+				if(head==MEGA_DATA_LENGTH)
+				{
+					head = 0;
+				}
+				circularBuffer[head++] = (0x7Fu & tempADCresult);
+				difference++;
+				if(head==MEGA_DATA_LENGTH)
+				{
+					head = 0;
+				}
 
 				tempADCresult = ADC12MEM3;
+
 				//correct DC offset
 				if((int)tempADCresult<correctionVccOverTwo)
 				{
 					tempADCresult = 0;
 				}
-				else if(tempCorrectionVariable<(int)tempADCresult)
+				else if(tempCorrectionVariable<tempADCresult)
 				{
 						tempADCresult = 1023;
 				}
@@ -1046,117 +1088,26 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 				{
 					tempADCresult = tempADCresult - correctionVccOverTwo;
 				}
-				bufferX[writingHeadX++] = (0x7u & (tempADCresult>>7));
-				bufferX[writingHeadX++] = (0x7Fu & tempADCresult);
-				if(writingHeadX>=MEGA_DATA_LENGTH)
+
+
+				circularBuffer[head++] = (0x7u & (tempADCresult>>7));
+				difference++;
+				if(head==MEGA_DATA_LENGTH)
 				{
-					writingHeadY = 0;
-					weUseBufferX = 0;
-					weHaveDataToSend = 1;
+					head = 0;
+				}
+				circularBuffer[head++] = (0x7Fu & tempADCresult);
+				difference++;
+				if(head==MEGA_DATA_LENGTH)
+				{
+					head = 0;
 				}
 
 			}
 
-			bufferX[tempIndex] |= BIT7;//put flag for begining of frame
-
-		}
-		else
-		{
-
-			tempIndex = writingHeadY;//remember position of begining of frame to put flag bit
-
-			tempADCresult = ADC12MEM0;
-			//correct DC offset
-			if((int)tempADCresult<correctionVccOverTwo)
-			{
-				tempADCresult = 0;
-			}
-			else if(tempCorrectionVariable<(int)tempADCresult)
-			{
-					tempADCresult = 1023;
-			}
-			else
-			{
-				tempADCresult = tempADCresult - correctionVccOverTwo;
-			}
-
-			bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
-			bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
+			circularBuffer[tempIndex] |= BIT7;//put flag for begining of frame
 
 
-
-			tempADCresult = ADC12MEM1;
-			//correct DC offset
-			if((int)tempADCresult<correctionVccOverTwo)
-			{
-				tempADCresult = 0;
-			}
-			else if(tempCorrectionVariable<(int)tempADCresult)
-			{
-					tempADCresult = 1023;
-			}
-			else
-			{
-				tempADCresult = tempADCresult - correctionVccOverTwo;
-			}
-			bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
-			bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
-			if(writingHeadY>=MEGA_DATA_LENGTH)
-			{
-				writingHeadX = 0;
-				weUseBufferX = 1;
-				weHaveDataToSend = 1;
-
-			}
-
-			if(numberOfChannels>2)
-			{
-				tempADCresult = ADC12MEM2;
-				//correct DC offset
-				if((int)tempADCresult<correctionVccOverTwo)
-				{
-					tempADCresult = 0;
-				}
-				else if(tempCorrectionVariable<(int)tempADCresult)
-				{
-						tempADCresult = 1023;
-				}
-				else
-				{
-					tempADCresult = tempADCresult - correctionVccOverTwo;
-				}
-				bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
-				bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
-
-
-				tempADCresult = ADC12MEM3;
-				//correct DC offset
-				if((int)tempADCresult<correctionVccOverTwo)
-				{
-					tempADCresult = 0;
-				}
-				else if(tempCorrectionVariable<(int)tempADCresult)
-				{
-						tempADCresult = 1023;
-				}
-				else
-				{
-					tempADCresult = tempADCresult - correctionVccOverTwo;
-				}
-				bufferY[writingHeadY++] = (0x7u & (tempADCresult>>7));
-				bufferY[writingHeadY++] = (0x7Fu & tempADCresult);
-				if(writingHeadY>=MEGA_DATA_LENGTH)
-				{
-					writingHeadX = 0;
-					weUseBufferX = 1;
-					weHaveDataToSend = 1;
-
-				}
-			}
-
-			bufferY[tempIndex] |= BIT7;
-
-		}
 	}
 	else
 	{
@@ -1165,5 +1116,5 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 	}
 //Uncomment this when not using repeat of sequence
 	ADC12CTL0 &= ~ADC12SC;
-	P4OUT &= ~RED_LED;
+	//P4OUT &= ~RED_LED;
 }

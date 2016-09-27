@@ -10,21 +10,21 @@ C_SRCS += \
 ../hal.c \
 ../main.c 
 
-C_DEPS += \
-./hal.pp \
-./main.pp 
-
 OBJS += \
 ./hal.obj \
 ./main.obj 
 
-OBJS__QUOTED += \
-"hal.obj" \
-"main.obj" 
+C_DEPS += \
+./hal.pp \
+./main.pp 
 
 C_DEPS__QUOTED += \
 "hal.pp" \
 "main.pp" 
+
+OBJS__QUOTED += \
+"hal.obj" \
+"main.obj" 
 
 C_SRCS__QUOTED += \
 "../hal.c" \

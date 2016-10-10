@@ -25,7 +25,7 @@
 
 
 //================ Parameters ===================
-#define FIRMWARE_VERSION "0.04"  // firmware version. Try to keep it to 4 characters
+#define FIRMWARE_VERSION "0.05"  // firmware version. Try to keep it to 4 characters
 #define HARDWARE_TYPE "NEURONSB" // hardware type/product. Try not to go over 8 characters
 #define HARDWARE_VERSION "0.5"  // hardware version. Try to keep it to 4 characters
 #define COMMAND_RESPONSE_LENGTH 35  //16 is just the delimiters etc.
@@ -44,6 +44,9 @@
 #define HALF_SAMPLE_RATE 3200
 
 #define LOW_RAIL_VOLTAGE_THRESHOLD 682
+#define BATERY_DEATH_VOLTAGE_OFF_THRESHOLD 490
+#define BATERY_DEATH_VOLTAGE_ON_THRESHOLD 530
+int powerTurnedOff = 0;
 
 #define GREEN_LED BIT0
 #define RED_LED BIT1
@@ -731,6 +734,36 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 		P1OUT &=  ~(POWER_DOWN_LED);
 	}
 
+
+	//Turn ON/OFF power enable pin with histeresis
+	if(tempADCresult<BATERY_DEATH_VOLTAGE_OFF_THRESHOLD)
+	{
+
+		P1OUT &= ~(POWER_ENABLE);
+		powerTurnedOff = 1;
+	}
+	else
+	{
+		if(powerTurnedOff)
+		{
+			if(tempADCresult<BATERY_DEATH_VOLTAGE_ON_THRESHOLD)
+			{
+				P1OUT &= ~(POWER_ENABLE);
+			}
+			else
+			{
+				P1OUT |= POWER_ENABLE;
+				powerTurnedOff = 0;
+			}
+		}
+		else
+		{
+
+			P1OUT |= POWER_ENABLE;
+			powerTurnedOff = 0;
+		}
+	}
+
 	//--------------------------------------------------------------------------------------------
 
 
@@ -782,18 +815,6 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 		{
 			//second board - Reaction timer
 
-			if(operationMode != OPERATION_MODE_FIVE_DIGITAL)
-			{
-				operationMode = OPERATION_MODE_FIVE_DIGITAL;
-				sendStringWithEscapeSequence("BRD:2;");
-				setupOperationMode();
-
-			}
-		}
-		else if((currentEncoderVoltage >= 465) && (currentEncoderVoltage < 620))
-		{
-			//third board - dev board
-
 			if(operationMode != OPERATION_MODE_BNC)
 			{
 				operationMode = OPERATION_MODE_BNC;
@@ -801,6 +822,19 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 				setupOperationMode();
 
 			}
+
+		}
+		else if((currentEncoderVoltage >= 465) && (currentEncoderVoltage < 620))
+		{
+			//third board - dev board
+			if(operationMode != OPERATION_MODE_FIVE_DIGITAL)
+			{
+				operationMode = OPERATION_MODE_FIVE_DIGITAL;
+				sendStringWithEscapeSequence("BRD:2;");
+				setupOperationMode();
+
+			}
+
 
 		}
 		else if((currentEncoderVoltage >= 620) && (currentEncoderVoltage < 775))
@@ -835,7 +869,7 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 	switch(operationMode)
 		{
 
-
+			case OPERATION_MODE_DEFAULT:
 			case OPERATION_MODE_FIVE_DIGITAL:
 			case OPERATION_MODE_ARDUINO_BOARD:
 				//two additional digital inputs

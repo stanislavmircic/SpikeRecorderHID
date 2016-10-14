@@ -25,7 +25,7 @@
 
 
 //================ Parameters ===================
-#define FIRMWARE_VERSION "0.05"  // firmware version. Try to keep it to 4 characters
+#define FIRMWARE_VERSION "0.06"  // firmware version. Try to keep it to 4 characters
 #define HARDWARE_TYPE "NEURONSB" // hardware type/product. Try not to go over 8 characters
 #define HARDWARE_VERSION "0.5"  // hardware version. Try to keep it to 4 characters
 #define COMMAND_RESPONSE_LENGTH 35  //16 is just the delimiters etc.
@@ -43,16 +43,28 @@
 #define TEN_K_SAMPLE_RATE 1600
 #define HALF_SAMPLE_RATE 3200
 
-#define LOW_RAIL_VOLTAGE_THRESHOLD 682
-#define BATERY_DEATH_VOLTAGE_OFF_THRESHOLD 490
-#define BATERY_DEATH_VOLTAGE_ON_THRESHOLD 530
-int powerTurnedOff = 0;
+
+#define LOW_RAIL_VOLTAGE_FIRST_HIGH 840
+#define LOW_RAIL_VOLTAGE_FIRST_LOW 822 //2.65V @3.3V
+#define LOW_RAIL_VOLTAGE_SECOND_HIGH 700
+#define LOW_RAIL_VOLTAGE_SECOND_LOW 682 //2.2V @3.3V
+#define BATERY_DEATH_VOLTAGE_HIGH 530
+#define BATERY_DEATH_VOLTAGE_LOW 490 //1V @2.6
+
+
+#define POWER_MODE_SOLID_GREEN 0
+#define POWER_MODE_BLINKING_GREEN 1
+#define POWER_MODE_BLINKING_RED 2
+#define POWER_MODE_LEDS_OFF 3
+int powerMode = 0;
 
 #define GREEN_LED BIT0
+#define BLUE_LED BIT1
 #define RED_LED BIT1
+
 #define RELAY_OUTPUT BIT7
 
-#define POWER_DOWN_LED BIT1
+
 #define POWER_ENABLE BIT0
 #define POWER_RAIL_MEASUREMENT_PIN BIT0
 
@@ -70,6 +82,10 @@ unsigned int tempCorrectionVariable = 0;
 int lowRailVoltageDetected = 0;
 unsigned int blinkingLowVoltageTimer = 0;
 #define BLINKING_LOW_VOLTAGE_TIMER_MAX_VALUE 5000
+
+
+unsigned int blinkingBoardDetectionTimer = 0;
+#define BLINKING_BOARD_DETECTION_TIMER_MAX_VALUE 2500
 //===============================================
 
 // Global flags set by events
@@ -189,13 +205,13 @@ void main (void)
 
        //LED diode (BIT0, BIT1) and relay (BIT7)
        P4SEL = 0;//digital I/O
-       P4DIR = GREEN_LED + RED_LED + RELAY_OUTPUT;
+       P4DIR = GREEN_LED + BLUE_LED + RELAY_OUTPUT;
        P4OUT = 0;
 
        //Enable disable powersupply on P1.0
        //Power down blinking LED on P1.1
 	   P1SEL = 0;//digital I/O
-	   P1DIR = POWER_DOWN_LED + POWER_ENABLE;
+	   P1DIR = RED_LED + POWER_ENABLE;
 	   P1OUT =  POWER_ENABLE;
 
 
@@ -313,7 +329,7 @@ void main (void)
             	  // TA0CCTL0 &= ~CCIE;//stop timer -> this will stop sampling -> this will stop stream
             	   //prepare buffer for next connection
             	   sampleData = 0;
-            	   P4OUT &= ~(RED_LED);
+            	  // P4OUT &= ~(RED_LED); //commented because to new 3 color LED
             	   head = 0;
             	   tail = 0;
             	   difference = 0;
@@ -350,7 +366,7 @@ void setupOperationMode(void)
 			P6DIR = 0;//select all as inputs
 			P6REN = ~(BIT0+BIT1+BIT7);
 			P6OUT = 0;//put output register to zero
-			P4OUT |= RELAY_OUTPUT + GREEN_LED;
+			P4OUT |= RELAY_OUTPUT;
 			//default setup of ADC, redefines part of Port 6 pins
 			//defaultSetupADC();
 		break;
@@ -364,8 +380,7 @@ void setupOperationMode(void)
 			P6REN = ~(BIT0+BIT1+BIT7);
 			P6OUT = 0;//put output register to zero
 
-			P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);
-			P4OUT |=  GREEN_LED;
+			P4OUT &= ~(RELAY_OUTPUT);
 			//default setup of ADC, redefines part of Port 6 pins
 			//defaultSetupADC();
 		break;
@@ -376,8 +391,7 @@ void setupOperationMode(void)
 			P6SEL = BIT0+BIT1+IO4+IO5 +BIT7;
 			P6REN = ~(BIT0+BIT1+IO4+IO5 +BIT7);
 			P6OUT = 0;//put output register to zero
-			P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);
-			P4OUT |=  GREEN_LED;
+			P4OUT &= ~(RELAY_OUTPUT);
 
 		break;
 		case OPERATION_MODE_DEFAULT:
@@ -388,7 +402,7 @@ void setupOperationMode(void)
 			P6REN = ~(BIT0+BIT1+BIT7);
 			P6OUT = 0;//put output register to zero
 
-			P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);
+			P4OUT &= ~(RELAY_OUTPUT);
 			//default setup of ADC, redefines part of Port 6 pins
 			//defaultSetupADC();
 		break;
@@ -400,7 +414,7 @@ void setupOperationMode(void)
 			P6REN = ~(BIT0+BIT1+BIT7);
 			P6OUT = 0;//put output register to zero
 
-			P4OUT &= ~(RELAY_OUTPUT + GREEN_LED);
+			P4OUT &= ~(RELAY_OUTPUT);
 			//default setup of ADC, redefines part of Port 6 pins
 			//defaultSetupADC();
 
@@ -424,7 +438,7 @@ void executeCommand(char * command)
    if (!(strcmp(parameter, "h"))){//stop
 	 //  TA0CCTL0 &= ~CCIE;
 	   sampleData = 0;
-	   P4OUT &= ~(RED_LED);
+	  // P4OUT &= ~(RED_LED); //commented because to new 3 color LED
 	   return;
    }
    else if (!(strcmp(parameter, "?"))){//get parameters of MSP
@@ -468,7 +482,7 @@ void executeCommand(char * command)
    else if (!(strcmp(parameter, "start"))){//start sampling
 	   //TA0CCTL0 = CCIE;
 	   sampleData = 1;
-	   P4OUT |= RED_LED;
+	  // P4OUT |= RED_LED; //commented because to new 3 color LED
 	   return;
    }
    else if (!(strcmp(parameter, "board"))){//get board type
@@ -698,7 +712,6 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 #endif
 {
 
-	//P4OUT |= RED_LED;
 
 	//calculate offset correction
 	tempADCresult = ADC12MEM6;
@@ -708,61 +721,119 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 
 	// ------------------------------- CHECK THE POWER RAIL VOLTAGE -------------------------------
 	tempADCresult = ADC12MEM5;
-	if(tempADCresult<LOW_RAIL_VOLTAGE_THRESHOLD)
+
+
+    //detect voltage level and set mode (with histeresis)
+	if(tempADCresult>=LOW_RAIL_VOLTAGE_FIRST_HIGH)   //Vcc > X > LOW_RAIL_VOLTAGE_FIRST_HIGH
 	{
-        lowRailVoltageDetected = 1;
+		powerMode = POWER_MODE_SOLID_GREEN;
+
 	}
 	else
 	{
-		lowRailVoltageDetected = 0;
-	}
-
-	if(lowRailVoltageDetected>0)
-	{
-		if(blinkingLowVoltageTimer>0)
+		if(tempADCresult>=LOW_RAIL_VOLTAGE_FIRST_LOW) //LOW_RAIL_VOLTAGE_FIRST_HIGH > X > LOW_RAIL_VOLTAGE_FIRST_LOW
 		{
-			blinkingLowVoltageTimer = blinkingLowVoltageTimer -1;
+				if(powerMode == POWER_MODE_SOLID_GREEN)
+				{
+					//do nothing it is in POWER_MODE_SOLID_GREEN
+				}
+				else
+				{
+					powerMode = POWER_MODE_BLINKING_GREEN;
+				}
+
 		}
 		else
 		{
-			blinkingLowVoltageTimer = BLINKING_LOW_VOLTAGE_TIMER_MAX_VALUE;
-			P1OUT ^=  POWER_DOWN_LED;
-		}
-	}
-	else
-	{
-		P1OUT &=  ~(POWER_DOWN_LED);
-	}
-
-
-	//Turn ON/OFF power enable pin with histeresis
-	if(tempADCresult<BATERY_DEATH_VOLTAGE_OFF_THRESHOLD)
-	{
-
-		P1OUT &= ~(POWER_ENABLE);
-		powerTurnedOff = 1;
-	}
-	else
-	{
-		if(powerTurnedOff)
-		{
-			if(tempADCresult<BATERY_DEATH_VOLTAGE_ON_THRESHOLD)
+			if(tempADCresult>=LOW_RAIL_VOLTAGE_SECOND_HIGH)  //LOW_RAIL_VOLTAGE_FIRST_LOW > X > LOW_RAIL_VOLTAGE_SECOND_HIGH
 			{
-				P1OUT &= ~(POWER_ENABLE);
+				powerMode = POWER_MODE_BLINKING_GREEN;
 			}
 			else
 			{
-				P1OUT |= POWER_ENABLE;
-				powerTurnedOff = 0;
-			}
-		}
-		else
-		{
+				if(tempADCresult>=LOW_RAIL_VOLTAGE_SECOND_LOW)  //LOW_RAIL_VOLTAGE_SECOND_HIGH > X > LOW_RAIL_VOLTAGE_SECOND_LOW
+				{
+						if(powerMode == POWER_MODE_BLINKING_GREEN)
+						{
+							//do nothing it is in POWER_MODE_SOLID_GREEN
+						}
+						else
+						{
+							powerMode = POWER_MODE_BLINKING_RED;
+						}
+				}
+				else
+				{
+					if(tempADCresult>=BATERY_DEATH_VOLTAGE_HIGH) //LOW_RAIL_VOLTAGE_SECOND_LOW > X > BATERY_DEATH_VOLTAGE_HIGH
+					{
+						powerMode = POWER_MODE_BLINKING_RED;
+					}
+					else
+					{
 
-			P1OUT |= POWER_ENABLE;
-			powerTurnedOff = 0;
+						if(tempADCresult>=BATERY_DEATH_VOLTAGE_LOW)  //BATERY_DEATH_VOLTAGE_HIGH > X > BATERY_DEATH_VOLTAGE_LOW
+						{
+								if(powerMode == POWER_MODE_BLINKING_RED)
+								{
+									//do nothing it is in POWER_MODE_SOLID_GREEN
+								}
+								else
+								{
+									powerMode = POWER_MODE_LEDS_OFF;
+								}
+						}
+						else                                     //BATERY_DEATH_VOLTAGE_LOW > X
+						{
+							powerMode = POWER_MODE_LEDS_OFF;
+						}
+					}
+
+				}
+			}
+
 		}
+
 	}
+
+	//set LEDs according to power mode
+	switch(powerMode)
+	{
+		case POWER_MODE_SOLID_GREEN:
+			P4OUT |=  GREEN_LED;
+			P1OUT &=  ~(RED_LED);
+			P1OUT |= POWER_ENABLE;
+		break;
+		case POWER_MODE_BLINKING_GREEN:
+		case POWER_MODE_BLINKING_RED:
+			P1OUT |= POWER_ENABLE;
+			if(blinkingLowVoltageTimer>0)
+			{
+				blinkingLowVoltageTimer = blinkingLowVoltageTimer -1;
+			}
+			else
+			{
+				blinkingLowVoltageTimer = BLINKING_LOW_VOLTAGE_TIMER_MAX_VALUE;
+				if(powerMode == POWER_MODE_BLINKING_GREEN)
+				{
+					P4OUT ^=  GREEN_LED;
+					P1OUT &=  ~(RED_LED);
+				}
+				else
+				{
+					P1OUT ^=  RED_LED;
+					P4OUT &=  ~(GREEN_LED);
+				}
+			}
+		break;
+		case POWER_MODE_LEDS_OFF:
+			P1OUT &= ~(POWER_ENABLE);
+			P1OUT &=  ~(RED_LED);
+			P4OUT &=  ~(GREEN_LED);
+		break;
+	}
+
+
+
 
 	//--------------------------------------------------------------------------------------------
 
@@ -775,9 +846,26 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 	if(debounceEncoderTimer>0)
 	{
 		debounceEncoderTimer = debounceEncoderTimer -1;
+
+		if(blinkingBoardDetectionTimer>0)
+		{
+			blinkingBoardDetectionTimer = blinkingBoardDetectionTimer -1;
+			P1OUT &=  ~(RED_LED);
+			P4OUT &=  ~(GREEN_LED);
+
+		}
+		else
+		{
+			blinkingBoardDetectionTimer = BLINKING_BOARD_DETECTION_TIMER_MAX_VALUE;
+			P4OUT ^=  BLUE_LED;
+
+			P1OUT &=  ~(RED_LED);
+			P4OUT &=  ~(GREEN_LED);
+		}
 	}
 	else
 	{
+		P4OUT &=  ~(BLUE_LED);
 		//if board detection voltage is changing
 		if((currentEncoderVoltage - lastEncoderVoltage)>100 || (lastEncoderVoltage - currentEncoderVoltage)>100)
 		{
@@ -1150,5 +1238,5 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 	}
 //Uncomment this when not using repeat of sequence
 	ADC12CTL0 &= ~ADC12SC;
-	//P4OUT &= ~RED_LED;
+
 }

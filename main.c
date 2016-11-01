@@ -3,7 +3,7 @@
  *  Backyard Brains 2015
  *  Build 004
  *
- *  This version has power rail detection.
+ *  This version has power rail detection and it responds on message about power state.
  *  Stanislav Mircic 26 Sep 2016
  * ======== main.c ========
  */
@@ -25,8 +25,8 @@
 
 
 //================ Parameters ===================
-#define FIRMWARE_VERSION "0.06"  // firmware version. Try to keep it to 4 characters
-#define HARDWARE_TYPE "NEURONSB" // hardware type/product. Try not to go over 8 characters
+#define FIRMWARE_VERSION "0.08"  // firmware version. Try to keep it to 4 characters
+#define HARDWARE_TYPE "NEURONSB" // hardware type/product. Try not to go over 8 characters (MUSCLESB, NEURONSB)
 #define HARDWARE_VERSION "0.5"  // hardware version. Try to keep it to 4 characters
 #define COMMAND_RESPONSE_LENGTH 35  //16 is just the delimiters etc.
 #define DEBOUNCE_TIME 2000
@@ -206,13 +206,14 @@ void main (void)
        //LED diode (BIT0, BIT1) and relay (BIT7)
        P4SEL = 0;//digital I/O
        P4DIR = GREEN_LED + BLUE_LED + RELAY_OUTPUT;
-       P4OUT = 0;
+       P4OUT = GREEN_LED + BLUE_LED;//active LOW RGB
+
 
        //Enable disable powersupply on P1.0
        //Power down blinking LED on P1.1
 	   P1SEL = 0;//digital I/O
 	   P1DIR = RED_LED + POWER_ENABLE;
-	   P1OUT =  POWER_ENABLE;
+	   P1OUT =   RED_LED + POWER_ENABLE;
 
 
 
@@ -461,6 +462,22 @@ void executeCommand(char * command)
 	   sendStringWithEscapeSequence(responseString);
 
 	   return;
+   }
+   else if (!(strcmp(parameter, "V"))){//check if power rail is ON or OFF
+	   	   char responseString[COMMAND_RESPONSE_LENGTH] = "";
+
+	   	   if(powerMode == POWER_MODE_LEDS_OFF)//if we are below 1V than 9V rail is off
+	   	   {
+	   		   strcat(responseString, "PWR:0;");
+	   	   }
+	   	   else
+	   	   {
+	   		strcat(responseString, "PWR:1;");
+	   	   }
+
+	   	   sendStringWithEscapeSequence(responseString);
+
+	   	   return;
    }
    else if (!(strcmp(parameter, "max"))){//get parameters of MSP
 
@@ -799,8 +816,8 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 	switch(powerMode)
 	{
 		case POWER_MODE_SOLID_GREEN:
-			P4OUT |=  GREEN_LED;
-			P1OUT &=  ~(RED_LED);
+			P4OUT &= ~(GREEN_LED);
+			P1OUT |=  RED_LED;
 			P1OUT |= POWER_ENABLE;
 		break;
 		case POWER_MODE_BLINKING_GREEN:
@@ -816,19 +833,19 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 				if(powerMode == POWER_MODE_BLINKING_GREEN)
 				{
 					P4OUT ^=  GREEN_LED;
-					P1OUT &=  ~(RED_LED);
+					P1OUT |=  RED_LED;
 				}
 				else
 				{
 					P1OUT ^=  RED_LED;
-					P4OUT &=  ~(GREEN_LED);
+					P4OUT |=  GREEN_LED;
 				}
 			}
 		break;
 		case POWER_MODE_LEDS_OFF:
 			P1OUT &= ~(POWER_ENABLE);
-			P1OUT &=  ~(RED_LED);
-			P4OUT &=  ~(GREEN_LED);
+			P1OUT |=  RED_LED;
+			P4OUT |=  GREEN_LED;
 		break;
 	}
 
@@ -850,8 +867,8 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 		if(blinkingBoardDetectionTimer>0)
 		{
 			blinkingBoardDetectionTimer = blinkingBoardDetectionTimer -1;
-			P1OUT &=  ~(RED_LED);
-			P4OUT &=  ~(GREEN_LED);
+			P1OUT |=  RED_LED;
+			P4OUT |=  GREEN_LED;
 
 		}
 		else
@@ -859,13 +876,13 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12ISR (void)
 			blinkingBoardDetectionTimer = BLINKING_BOARD_DETECTION_TIMER_MAX_VALUE;
 			P4OUT ^=  BLUE_LED;
 
-			P1OUT &=  ~(RED_LED);
-			P4OUT &=  ~(GREEN_LED);
+			P1OUT |=  RED_LED;
+			P4OUT |=  GREEN_LED;
 		}
 	}
 	else
 	{
-		P4OUT &=  ~(BLUE_LED);
+		P4OUT |=  BLUE_LED;
 		//if board detection voltage is changing
 		if((currentEncoderVoltage - lastEncoderVoltage)>100 || (lastEncoderVoltage - currentEncoderVoltage)>100)
 		{

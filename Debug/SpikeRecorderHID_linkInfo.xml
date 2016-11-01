@@ -2,7 +2,7 @@
 <link_info>
    <banner>MSP430 Linker PC v4.4.5</banner>
    <copyright>Copyright (c) 2003-2015 Texas Instruments Incorporated</copyright>
-   <link_time>0x5810a2b3</link_time>
+   <link_time>0x58186ff1</link_time>
    <link_errors>0x0</link_errors>
    <output_file>SpikeRecorderHID.out</output_file>
    <entry_point>

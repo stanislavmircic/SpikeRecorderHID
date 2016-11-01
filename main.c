@@ -1,7 +1,7 @@
 /* --COPYRIGHT--
  *
  *  Backyard Brains 2015
- *  Build 004
+ *  Build 008
  *
  *  This version has power rail detection and it responds on message about power state.
  *  Stanislav Mircic 26 Sep 2016
